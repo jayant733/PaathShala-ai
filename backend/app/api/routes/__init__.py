@@ -1,0 +1,11 @@
+from .health import router as health_router
+from .auth import router as auth_router
+from .users import router as users_router
+from .ai import router as ai_router
+from .documents import router as documents_router
+from .agent import router as agent_router
+from .memory import router as memory_router
+from .dashboard import router as dashboard_router
+from .activity import router as activity_router
+from .chat import router as chat_router
+from .ai_providers import router as ai_providers_router
