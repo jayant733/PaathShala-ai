@@ -1,0 +1,29 @@
+groups:
+  - name: paathshala_alerts
+    rules:
+      - alert: ServiceDown
+        expr: up{job="fastapi-backend"} == 0
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "PaathShala AI Backend Service Down"
+          description: "The FastAPI backend container has been unreachable for more than 30 seconds."
+
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[1m])) / sum(rate(http_requests_total[1m])) > 0.05
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High HTTP 5xx Error Rate Detected"
+          description: "HTTP 5xx error rate is above 5% for the last 1 minute."
+
+      - alert: HighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[1m])) by (le)) > 2.0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API Request Latency"
+          description: "95th percentile request duration is above 2.0 seconds."
