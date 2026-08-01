@@ -1,0 +1,10 @@
+[
+  {
+    "id": "json_01",
+    "category": "json_format",
+    "difficulty": "easy",
+    "prompt": "Return a valid JSON object with keys 'status' (string 'success') and 'code' (number 200). Strictly output raw JSON.",
+    "expected_substring": "\"status\"",
+    "validation_rule": "valid_json"
+  }
+]

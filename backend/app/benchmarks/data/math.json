@@ -1,0 +1,18 @@
+[
+  {
+    "id": "math_01",
+    "category": "math",
+    "difficulty": "easy",
+    "prompt": "What is 15 multiplied by 8?",
+    "expected_substring": "120",
+    "validation_rule": "contains_number"
+  },
+  {
+    "id": "math_02",
+    "category": "math",
+    "difficulty": "medium",
+    "prompt": "Solve: What is the square root of 144 plus 25?",
+    "expected_substring": "37",
+    "validation_rule": "contains_number"
+  }
+]

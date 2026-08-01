@@ -1,0 +1,4 @@
+Docker Health Report - Status: PASS
+===================================================
+[PASS] backend-postgres-1 - Up 26 hours (healthy)
+[PASS] backend-redis-1 - Up 26 hours

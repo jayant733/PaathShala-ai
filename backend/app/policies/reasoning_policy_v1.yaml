@@ -1,0 +1,18 @@
+policy_name: reasoning_policy
+version: v1
+domain: reasoning
+min_score: 6.5
+requires_code_support: false
+requires_json: false
+max_acceptable_latency_sec: 6.0
+
+weights:
+  capability: 0.40
+  benchmark: 0.35
+  speed: 0.15
+  resource: 0.10
+
+preferred_models:
+  - qwen3:4b
+  - llama3:latest
+  - gemma:7b

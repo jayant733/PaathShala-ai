@@ -1,0 +1,29 @@
+[
+  {
+    "id": "code_01",
+    "category": "coding",
+    "difficulty": "medium",
+    "language": "python",
+    "prompt": "Write a Python function `def is_prime(n: int) -> bool:` that checks if a number is prime. Output code only.",
+    "expected_substring": "def is_prime",
+    "validation_rule": "contains_keyword"
+  },
+  {
+    "id": "code_02",
+    "category": "coding",
+    "difficulty": "easy",
+    "language": "python",
+    "prompt": "Write a Python function `def add(a, b):` returning their sum.",
+    "expected_substring": "def add",
+    "validation_rule": "contains_keyword"
+  },
+  {
+    "id": "code_03",
+    "category": "coding",
+    "difficulty": "medium",
+    "language": "java",
+    "prompt": "Write a Java method `public static boolean isEven(int n)` that checks if a number is even.",
+    "expected_substring": "public static boolean isEven",
+    "validation_rule": "contains_keyword"
+  }
+]

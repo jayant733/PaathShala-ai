@@ -1,0 +1,18 @@
+policy_name: coding_policy
+version: v1
+domain: coding
+min_score: 7.0
+requires_code_support: true
+requires_json: false
+max_acceptable_latency_sec: 4.0
+
+weights:
+  capability: 0.45
+  benchmark: 0.35
+  speed: 0.10
+  resource: 0.10
+
+preferred_models:
+  - qwen2.5-coder:7b
+  - deepseek-coder
+  - qwen3:4b

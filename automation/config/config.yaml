@@ -1,0 +1,20 @@
+sre_config:
+  version: "2.0.0"
+  thresholds:
+    cpu_warning: 75
+    cpu_critical: 90
+    ram_warning: 80
+    ram_critical: 92
+    disk_warning: 80
+    disk_critical: 88
+    max_latency_ms: 2000
+  slo:
+    target_availability_pct: 99.9
+    error_budget_window_days: 30
+  auto_heal:
+    max_retries_per_hour: 3
+    cooldown_seconds: 60
+  notifications:
+    slack_webhook_url: ""
+    discord_webhook_url: ""
+    telegram_bot_token: ""

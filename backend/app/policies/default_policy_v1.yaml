@@ -1,0 +1,18 @@
+policy_name: default_policy
+version: v1
+domain: default
+min_score: 5.0
+requires_code_support: false
+requires_json: false
+max_acceptable_latency_sec: 5.0
+
+weights:
+  capability: 0.40
+  benchmark: 0.30
+  speed: 0.15
+  resource: 0.15
+
+preferred_models:
+  - qwen3:4b
+  - llama3:latest
+  - gemma:7b
