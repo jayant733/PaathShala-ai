@@ -10,3 +10,4 @@ from app.database.models.chat import Conversation, Message
 from app.database.models.memory import UserMemory, LearningEvent
 from app.database.models.activity import LearningActivity, SessionTracking
 from app.database.models.routing import RoutingRule
+from app.database.models.quiz import Quiz, Question, QuizAttempt

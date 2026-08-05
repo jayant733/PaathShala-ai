@@ -21,6 +21,8 @@ class User(Base):
     ai_interactions = relationship("AIInteraction", back_populates="user", cascade="all, delete-orphan")
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
     conversations = relationship("Conversation", back_populates="user", cascade="all, delete-orphan")
+    quizzes = relationship("Quiz", back_populates="creator", cascade="all, delete-orphan")
+    quiz_attempts = relationship("QuizAttempt", back_populates="user", cascade="all, delete-orphan")
     memories = relationship("UserMemory", back_populates="user", cascade="all, delete-orphan")
     learning_events = relationship("LearningEvent", back_populates="user", cascade="all, delete-orphan")
     learning_activities = relationship("LearningActivity", back_populates="user", cascade="all, delete-orphan")

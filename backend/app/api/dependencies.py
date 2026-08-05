@@ -11,6 +11,8 @@ from app.repositories.user_repository import UserRepository
 from app.services.user_service import UserService
 from app.services.auth_service import AuthService
 from app.services.ai_service import AIService
+from app.services.quiz_generator_service import QuizGeneratorService
+from app.services.quiz_export_service import QuizExportService
 from app.services.document_service import DocumentService
 from app.services.rag_service import RAGService
 from app.services.document_processor import DocumentProcessor
@@ -19,6 +21,7 @@ from app.services.agent_service import AgentService
 from app.services.memory_service import MemoryService
 from app.ai.agents.tools import AgentTools
 from app.repositories.ai_repository import AIRepository
+from app.repositories.quiz_repository import QuizRepository
 from app.repositories.vector_repository import VectorRepository
 from app.repositories.memory_repository import MemoryRepository
 from app.ai.embeddings.gemini import GeminiEmbeddingProvider
@@ -43,6 +46,18 @@ def get_ai_repository(session: AsyncSession = Depends(get_db)) -> AIRepository:
 def get_ai_service(repository: AIRepository = Depends(get_ai_repository)) -> AIService:
     provider = ProviderManager()
     return AIService(provider=provider, repository=repository)
+
+def get_quiz_repository(session: AsyncSession = Depends(get_db)) -> QuizRepository:
+    return QuizRepository(session)
+
+def get_quiz_generator_service(
+    session: AsyncSession = Depends(get_db),
+    ai_service: AIService = Depends(get_ai_service),
+) -> QuizGeneratorService:
+    return QuizGeneratorService(ai_service, QuizRepository(session))
+
+def get_quiz_export_service(session: AsyncSession = Depends(get_db)) -> QuizExportService:
+    return QuizExportService(QuizRepository(session))
 
 def get_vector_repository(session: AsyncSession = Depends(get_db)) -> VectorRepository:
     return VectorRepository(session)
