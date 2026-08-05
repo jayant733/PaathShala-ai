@@ -105,4 +105,5 @@ jobs:
       - name: Validate Prometheus Configuration
         uses: docker://prom/prometheus:v2.51.0
         with:
+          entrypoint: /bin/promtool
           args: check config ./monitoring/prometheus/prometheus.yml
