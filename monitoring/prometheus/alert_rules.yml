@@ -1,0 +1,74 @@
+groups:
+  - name: backend-alerts
+    rules:
+      - alert: HighAPIErrorRate
+        expr: sum(rate(fastapi_responses_total{status=~"5.."}[5m])) / sum(rate(fastapi_responses_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          env: production
+        annotations:
+          summary: "High API error rate detected"
+          description: "More than 5% of requests have resulted in 5xx errors over the last 5 minutes."
+          impact: "Users are experiencing errors and unable to use the application."
+          oncall_team: "@backend-oncall"
+
+      - alert: HighAPILatency
+        expr: sum(rate(fastapi_request_duration_seconds_sum[5m])) / sum(rate(fastapi_request_duration_seconds_count[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          env: production
+        annotations:
+          summary: "High API latency detected"
+          description: "Average API request latency is greater than 2 seconds over the last 5 minutes."
+          impact: "Application feels sluggish for users."
+          oncall_team: "@backend-team"
+
+      - alert: BackendServiceDown
+        expr: up{job="fastapi-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          env: production
+        annotations:
+          summary: "Backend service is down"
+          description: "Prometheus cannot scrape the FastAPI backend for more than 1 minute."
+          impact: "Total API outage. Frontend cannot fetch data."
+          oncall_team: "@devops-oncall"
+
+      - alert: HighRequestTraffic
+        expr: sum(rate(fastapi_requests_total[1m])) > 100
+        for: 1m
+        labels:
+          severity: warning
+          env: production
+        annotations:
+          summary: "High request traffic"
+          description: "Backend is receiving more than 100 requests per second."
+          impact: "Potential scaling required soon, monitor resource usage."
+          oncall_team: "@devops-team"
+
+      - alert: HighCPUUsage
+        expr: sum(rate(container_cpu_usage_seconds_total{container="paathshala-backend"}[1m])) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          env: production
+        annotations:
+          summary: "High CPU usage"
+          description: "Backend container CPU usage is above 80%."
+          impact: "Potential latency increase."
+          oncall_team: "@devops-team"
+
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{container="paathshala-backend"} / container_spec_memory_limit_bytes{container="paathshala-backend"} > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          env: production
+        annotations:
+          summary: "High memory usage"
+          description: "Backend container memory usage is above 80%."
+          impact: "OOM kill risk if memory continues to grow."
+          oncall_team: "@devops-team"
