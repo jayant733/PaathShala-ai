@@ -1,39 +1,724 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-@layer base {
-  html,
-  body {
-    margin: 0;
-    padding: 0;
-  }
-  body {
-    overscroll-behavior: none;
-  }
-  main > :first-child {
-    margin-top: 0 !important;
-  }
-  main > :last-child {
-    margin-bottom: 0 !important;
+/* ============================================================
+   PaathShala AI — Material 3 (M3) Dark Design System
+   Semantic tokens are defined in tailwind.config.js under
+   theme.extend.colors, which generates bg-*/text-*/border-*
+   utilities consumed across the app (Login, Dashboard, AI Chat,
+   Quizzes, Landing).
+   ============================================================ */
+
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --color-ring: #a8c7fa;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-family: 'Inter', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  overscroll-behavior: none;
+}
+
+main > :first-child { margin-top: 0 !important; }
+main > :last-child { margin-bottom: 0 !important; }
+
+/* Keyboard focus */
+:focus-visible {
+  outline: 2px solid var(--color-ring);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
-::-webkit-scrollbar {
-  display: none;
+::-webkit-scrollbar { display: none; }
+
+/* ============================================================
+   Display / headline type
+   ============================================================ */
+.font-display { font-family: 'Geist', 'Inter', system-ui, sans-serif; }
+
+/* Material Symbols: enable filled variants */
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
 }
 
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
+/* ============================================================
+   Premium surface utilities (glassmorphism / aurora / glow)
+   All colors derive from the M3 tokens in tailwind.config.js.
+   ============================================================ */
+
+/* Frosted glass panel */
+.glass {
+  background: color-mix(in srgb, var(--color-surface-container-lowest) 62%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 35%, transparent);
+  box-shadow:
+    0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent) inset,
+    0 24px 60px -30px rgba(0, 25, 16, 0.45);
 }
 
-@keyframes float {
-    0% { transform: translateY(0px) rotateX(5deg) rotateY(-10deg); }
-    50% { transform: translateY(-15px) rotateX(2deg) rotateY(-5deg); }
-    100% { transform: translateY(0px) rotateX(5deg) rotateY(-10deg); }
+/* Glass for dark/translucent surfaces */
+.glass-strong {
+  background: color-mix(in srgb, var(--color-surface-container-low) 72%, transparent);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid color-mix(in srgb, var(--color-outline-variant) 45%, transparent);
 }
 
-@keyframes dash {
-    from { stroke-dashoffset: 1000; }
-    to { stroke-dashoffset: 680; }
+/* Animated aurora background layer (GPU transforms only) */
+.aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  will-change: transform;
+  animation: aurora-drift var(--aurora-dur, 26s) ease-in-out infinite alternate;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  100% { transform: translate3d(var(--aurora-x, 40px), var(--aurora-y, -30px), 0) scale(1.12); }
+}
+
+/* Animated gradient text */
+.text-gradient {
+  background: linear-gradient(110deg,
+    var(--color-primary-fixed) 0%,
+    var(--color-tertiary-fixed) 45%,
+    var(--color-secondary) 70%,
+    var(--color-primary-fixed) 100%);
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gradient-pan 7s ease-in-out infinite;
+}
+@keyframes gradient-pan {
+  0%   { background-position: 0% center; }
+  50%  { background-position: 100% center; }
+  100% { background-position: 0% center; }
+}
+
+/* Masked animated border that follows the element shape */
+.gradient-border {
+  position: relative;
+}
+.gradient-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--color-primary-fixed) 60%, transparent),
+    color-mix(in srgb, var(--color-secondary) 35%, transparent) 50%,
+    transparent 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
+}
+.gradient-border:hover::before { opacity: 1; }
+
+/* Soft primary glow */
+.glow-primary {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--color-primary) 20%, transparent),
+    0 12px 40px -12px color-mix(in srgb, var(--color-primary-fixed) 45%, transparent);
+}
+
+/* Hairline grid backdrop for technical panels */
+.grid-backdrop {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-outline-variant) 40%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-outline-variant) 40%, transparent) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, #000 30%, transparent 75%);
+}
+
+/* Reduced motion: settle all premium effects */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob,
+  .text-gradient {
+    animation: none;
+  }
+  .aurora-blob { transform: none; }
+}
+
+/* ============================================================
+   GSAP fan card carousel (used by components/ui/card-fan-carousel)
+   ============================================================ */
+.fan-layout {
+  position: relative;
+  height: 38rem;
+}
+
+.fan-card {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: min(21rem, 62vw);
+  aspect-ratio: 4 / 5;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 24px 64px -28px rgba(15, 23, 42, 0.35);
+  transform-origin: center;
+  will-change: transform;
+}
+
+@media (max-width: 1024px) {
+  .fan-layout { height: 34rem; }
+  .fan-card { width: min(19rem, 60vw); }
+}
+@media (max-width: 768px) {
+  .fan-layout { height: 28rem; }
+  .fan-card { width: min(17rem, 62vw); }
+}
+@media (max-width: 640px) {
+  .fan-layout { height: 26rem; }
+  .fan-card { width: min(15rem, 64vw); }
+}
+@media (max-width: 480px) {
+  .fan-layout { height: 22rem; }
+  .fan-card { width: min(13rem, 66vw); }
+}
+
+/* ============================================================
+   Ticket Component
+   ============================================================ */
+.ticket-canvas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1em;
+}
+
+.ticket-wrapper {
+  --t-bg: #1e1e24;
+  --t-bg-light: #2b2b36;
+  --t-accent: #7c3aed;
+  --t-accent-glow: rgba(124, 58, 237, 0.5);
+  --t-text-main: #f8fafc;
+  --t-text-muted: #94a3b8;
+  font-size: 10px;
+  perspective: 1000px;
+  display: inline-block;
+}
+
+.ticket {
+  position: relative;
+  width: 22em;
+  color: var(--t-text-main);
+  font-family: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  transform-style: preserve-3d;
+  transition:
+    transform 0.6s cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 0.6s ease;
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  background: transparent;
+  filter: drop-shadow(0px 0px 10px rgba(0, 0, 0, 0.5));
+}
+
+.ticket-wrapper:hover .ticket {
+  transform: rotateX(5deg) rotateY(-10deg) scale(1.02);
+  box-shadow:
+    20px 20px 40px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.1),
+    -5px -5px 20px var(--t-accent-glow);
+}
+
+.ticket::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 1em;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.1) 45%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(255, 255, 255, 0.1) 55%,
+    transparent 60%,
+    transparent 100%
+  );
+  z-index: 10;
+  background-size: 250% 250%;
+  background-position: 100% 100%;
+  transition: background-position 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+  mix-blend-mode: overlay;
+}
+
+.ticket-wrapper:hover .ticket::after {
+  background-position: 0% 0%;
+}
+
+.t-main {
+  padding: 2em;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(
+      circle at bottom left,
+      transparent 1em,
+      var(--t-bg) 1.05em
+    ),
+    radial-gradient(circle at bottom right, transparent 1em, var(--t-bg) 1.05em);
+  background-size: 51% 100%;
+  background-position:
+    bottom left,
+    bottom right;
+  background-repeat: no-repeat;
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+}
+
+.t-main::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(
+      rgba(124, 58, 237, 0.15) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, rgba(124, 58, 237, 0.15) 1px, transparent 1px);
+  background-size: 2em 2em;
+  opacity: 0.6;
+  z-index: 0;
+  pointer-events: none;
+  transform: perspective(500px) rotateX(20deg) scale(1.5);
+  animation: grid-scroll 20s linear infinite;
+}
+
+@keyframes grid-scroll {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 0 4em;
+  }
+}
+
+.t-content {
+  position: relative;
+  z-index: 1;
+}
+
+.t-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2em;
+}
+
+.t-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-weight: 900;
+  font-size: 1.2em;
+  letter-spacing: -0.05em;
+  color: #fff;
+}
+
+.t-logo svg {
+  width: 1.5em;
+  height: 1.5em;
+  fill: var(--t-accent);
+  filter: drop-shadow(0 0 5px var(--t-accent));
+  animation: logo-pulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes logo-pulse {
+  0% {
+    filter: drop-shadow(0 0 2px var(--t-accent));
+  }
+
+  100% {
+    filter: drop-shadow(0 0 10px var(--t-accent)) brightness(1.2);
+  }
+}
+
+.t-type {
+  font-size: 0.6em;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--t-accent);
+  border: 1px solid var(--t-accent);
+  padding: 0.4em 0.8em;
+  border-radius: 99em;
+  font-weight: 700;
+}
+
+.t-title {
+  font-size: 1.8em;
+  font-weight: 900;
+  line-height: 1.1;
+  margin-bottom: 0.2em;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.t-subtitle {
+  color: var(--t-text-muted);
+  font-size: 1.1em;
+  margin-bottom: 1em;
+}
+
+.t-perforation {
+  display: flex;
+  justify-content: space-between;
+  height: 1em;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+}
+
+.t-perf-line {
+  flex-grow: 1;
+  height: 0;
+  border-top: 2px dashed rgba(255, 255, 255, 0.2);
+  margin: 0 1.5em;
+}
+
+.t-stub {
+  padding: 2em;
+  background: radial-gradient(
+      circle at top left,
+      transparent 1em,
+      var(--t-bg-light) 1.05em
+    ),
+    radial-gradient(
+      circle at top right,
+      transparent 1em,
+      var(--t-bg-light) 1.05em
+    );
+  background-size: 51% 100%;
+  background-position:
+    top left,
+    top right;
+  background-repeat: no-repeat;
+  border-bottom-left-radius: 1em;
+  border-bottom-right-radius: 1em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.t-barcode-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+.t-barcode {
+  width: 10em;
+  height: 3em;
+  background: repeating-linear-gradient(
+    90deg,
+    #fff 0,
+    #fff 2px,
+    transparent 2px,
+    transparent 4px,
+    #fff 4px,
+    #fff 5px,
+    transparent 5px,
+    transparent 8px,
+    #fff 8px,
+    #fff 12px,
+    transparent 12px,
+    transparent 15px,
+    #fff 15px,
+    #fff 16px,
+    transparent 16px,
+    transparent 18px
+  );
+  opacity: 0.8;
+}
+
+.t-barcode-id {
+  font-family: monospace;
+  font-size: 0.7em;
+  color: var(--t-text-muted);
+  letter-spacing: 0.2em;
+  text-align: justify;
+}
+
+.t-admit {
+  text-align: right;
+}
+
+.t-admit-text {
+  font-size: 0.7em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--t-text-muted);
+}
+
+.t-admit-num {
+  font-size: 3em;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--t-accent);
+  text-shadow: 0 0 15px var(--t-accent-glow);
+}
+
+.ticket-wrapper:active .ticket {
+  transform: rotateX(15deg) rotateY(-5deg) scale(0.98);
+}
+
+.ticket-wrapper:active .t-stub {
+  transform: translateY(5px) rotateZ(2deg);
+  opacity: 0.8;
+  transition:
+    transform 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* ============================================================
+   Step Card Component
+   ============================================================ */
+.step-card {
+  background-color: #1e1e24;
+  display: flex;
+  width: 100%;
+  height: 140px;
+  position: relative;
+  border-radius: 16px;
+  transition: 0.3s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.step-card:hover {
+  transform: scale(1.03);
+}
+
+.step-card:hover .left-side {
+  width: 100%;
+}
+
+.step-card .left-side {
+  background-color: #7c3aed; /* Changed to primary purple */
+  width: 70px;
+  height: 100%;
+  border-radius: 15px 0 0 15px;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: 0.3s;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.step-card:hover .left-side {
+  border-radius: 15px;
+}
+
+.step-card .right-side {
+  width: calc(100% - 70px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  cursor: pointer;
+  justify-content: space-between;
+  transition: 0.3s;
+  padding: 0 15px;
+}
+
+.step-card .right-side:hover {
+  background-color: #2b2b36;
+  border-radius: 0 15px 15px 0;
+}
+
+.step-card .new {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step-card .new span {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 400;
+  white-space: normal;
+  line-height: 1.3;
+}
+
+.step-card .card-ui {
+  width: 45px;
+  height: 30px;
+  background-color: #a5b4fc;
+  border-radius: 4px;
+  position: absolute;
+  display: flex;
+  z-index: 10;
+  flex-direction: column;
+  align-items: center;
+  box-shadow: 5px 5px 5px -2px rgba(99, 102, 241, 0.72);
+}
+
+.step-card .card-line {
+  width: 40px;
+  height: 8px;
+  background-color: #818cf8;
+  border-radius: 2px;
+  margin-top: 5px;
+}
+
+.step-card .buttons {
+  width: 6px;
+  height: 6px;
+  background-color: #4f46e5;
+  box-shadow: 0 -8px 0 0 #3730a3, 0 8px 0 0 #4338ca;
+  border-radius: 50%;
+  transform: rotate(90deg);
+  margin: 6px 0 0 -20px;
+}
+
+.step-card:hover .card-ui {
+  animation: slide-top 1.2s cubic-bezier(0.645, 0.045, 0.355, 1) both;
+}
+
+.step-card:hover .post {
+  animation: slide-post 1s cubic-bezier(0.165, 0.84, 0.44, 1) both;
+}
+
+@keyframes slide-top {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-50px) rotate(90deg); }
+  60% { transform: translateY(-50px) rotate(90deg); }
+  100% { transform: translateY(-5px) rotate(90deg); }
+}
+
+.step-card .post {
+  width: 45px;
+  height: 55px;
+  background-color: #e2e8f0;
+  position: absolute;
+  z-index: 11;
+  bottom: 5px;
+  top: 100px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.step-card .post-line {
+  width: 35px;
+  height: 6px;
+  background-color: #64748b;
+  position: absolute;
+  border-radius: 0px 0px 2px 2px;
+  right: 5px;
+  top: 6px;
+}
+
+.step-card .post-line:before {
+  content: "";
+  position: absolute;
+  width: 35px;
+  height: 6px;
+  background-color: #94a3b8;
+  top: -6px;
+}
+
+.step-card .screen {
+  width: 35px;
+  height: 25px;
+  background-color: #ffffff;
+  position: absolute;
+  top: 18px;
+  right: 5px;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-card .numbers {
+  width: 8px;
+  height: 8px;
+  background-color: #94a3b8;
+  box-shadow: 0 -12px 0 0 #94a3b8, 0 12px 0 0 #94a3b8;
+  border-radius: 1px;
+  position: absolute;
+  transform: rotate(90deg);
+  left: 18px;
+  top: 38px;
+}
+
+.step-card .numbers-line2 {
+  width: 8px;
+  height: 8px;
+  background-color: #cbd5e1;
+  box-shadow: 0 -12px 0 0 #cbd5e1, 0 12px 0 0 #cbd5e1;
+  border-radius: 1px;
+  position: absolute;
+  transform: rotate(90deg);
+  left: 18px;
+  top: 48px;
+}
+
+@keyframes slide-post {
+  50% { transform: translateY(0); }
+  100% { transform: translateY(-60px); }
+}
+
+.step-card .dollar {
+  font-size: 14px;
+  color: #7c3aed;
+}
+
+.step-card:hover .dollar {
+  animation: fade-in-fwd 0.3s 1s backwards;
+}
+
+@keyframes fade-in-fwd {
+  0% { opacity: 0; transform: translateY(-5px); }
+  100% { opacity: 1; transform: translateY(0); }
 }

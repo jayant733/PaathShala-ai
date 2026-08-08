@@ -3,7 +3,13 @@ global:
   evaluation_interval: 5s
 
 rule_files:
-  - "alert.rules.yml"
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
 
 scrape_configs:
   - job_name: "prometheus"
@@ -13,4 +19,4 @@ scrape_configs:
   - job_name: "fastapi-backend"
     metrics_path: "/metrics"
     static_configs:
-      - targets: ["backend:8000"]
+      - targets: ["host.docker.internal:8000"]

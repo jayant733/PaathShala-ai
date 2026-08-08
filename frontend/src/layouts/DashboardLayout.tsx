@@ -19,14 +19,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="bg-surface font-body-md text-body-md text-on-surface min-h-screen relative">
-      <div 
-        className="fixed inset-0 z-0 pointer-events-none"
-        style={{
-          backgroundImage: "url('/pattern-bg.png')",
-          backgroundRepeat: "repeat",
-          backgroundSize: "300px"
-        }}
-      />
+      {/* Background container removed for theme consistency */}
       
       {/* Main Layout content, elevated above background */}
       <div className="relative z-10 flex w-full">

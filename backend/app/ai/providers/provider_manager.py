@@ -27,11 +27,11 @@ class ProviderManager(LLMProvider):
                 logger.error(f"Auto Mode: Fallback (Ollama) also failed: {str(fallback_err)}")
                 raise fallback_err
 
-    async def _execute_auto_stream(self, prompt: str, system_instruction: Optional[str] = None):
+    async def _execute_auto_stream(self, prompt: str, system_instruction: Optional[str] = None, history: list = None):
         """Auto mode tries Gemini first, then falls back to Ollama."""
         logger.info("[ProviderManager] Executing Auto Stream: trying Gemini first.")
         try:
-            gen = self.gemini.stream_response(prompt, system_instruction)
+            gen = self.gemini.stream_response(prompt, system_instruction, history=history)
             first = True
             async for chunk in gen:
                 if first:
@@ -45,7 +45,7 @@ class ProviderManager(LLMProvider):
             
             logger.warning(f"Auto Mode: Primary (Gemini) stream failed: {str(e)}. Falling back to Local.")
             try:
-                gen2 = self.ollama.stream_response(prompt, system_instruction)
+                gen2 = self.ollama.stream_response(prompt, system_instruction, history=history)
                 async for chunk in gen2:
                     yield chunk
             except Exception as fallback_err:
@@ -67,7 +67,7 @@ class ProviderManager(LLMProvider):
             logger.error(f"Manual Mode: Requested provider '{provider_name}' failed: {str(e)}")
             raise e
 
-    async def _execute_manual_stream(self, provider_name: str, prompt: str, system_instruction: Optional[str] = None):
+    async def _execute_manual_stream(self, provider_name: str, prompt: str, system_instruction: Optional[str] = None, history: list = None):
         """Manual mode strictly forces the chosen provider without fallback."""
         logger.info(f"[ProviderManager] Executing Manual Stream: forcing provider={provider_name}")
         if provider_name == "ollama":
@@ -78,7 +78,7 @@ class ProviderManager(LLMProvider):
             raise AIBadRequestException(f"Unknown provider: {provider_name}")
             
         try:
-            gen = target.stream_response(prompt, system_instruction)
+            gen = target.stream_response(prompt, system_instruction, history=history)
             async for chunk in gen:
                 yield chunk
         except Exception as e:
@@ -91,13 +91,13 @@ class ProviderManager(LLMProvider):
             return await self._execute_manual(ctx.provider, prompt, system_instruction)
         return await self._execute_auto(prompt, system_instruction)
 
-    async def stream_response(self, prompt: str, system_instruction: Optional[str] = None):
+    async def stream_response(self, prompt: str, system_instruction: Optional[str] = None, history: list = None):
         ctx = get_ai_context()
         if ctx.mode == "manual" and ctx.provider:
-            async for chunk in self._execute_manual_stream(ctx.provider, prompt, system_instruction):
+            async for chunk in self._execute_manual_stream(ctx.provider, prompt, system_instruction, history):
                 yield chunk
         else:
-            async for chunk in self._execute_auto_stream(prompt, system_instruction):
+            async for chunk in self._execute_auto_stream(prompt, system_instruction, history):
                 yield chunk
 
     async def check_health(self) -> bool:

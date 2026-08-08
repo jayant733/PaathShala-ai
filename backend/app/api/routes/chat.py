@@ -3,11 +3,12 @@ from typing import List
 from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import desc
+from sqlalchemy import desc, delete
 
 from app.api.dependencies import get_current_user, get_db
 from app.database.models.user import User
 from app.database.models.chat import Conversation, Message
+from app.database.models.memory import UserMemory
 from app.schemas.chat import (
     ConversationListResponse,
     ConversationItem,
@@ -102,3 +103,27 @@ async def get_conversation_context(
         topics=topics,
         memories=memories
     )
+
+@router.delete("/conversations/{conversation_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_conversation(
+    conversation_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete a conversation owned by the current user.
+    """
+    stmt = select(Conversation).where(Conversation.id == conversation_id, Conversation.user_id == current_user.id)
+    result = await db.execute(stmt)
+    conv = result.scalar_one_or_none()
+
+    if not conv:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
+
+    # Clear conversation-scoped memories first (FK is ON DELETE SET NULL)
+    await db.execute(delete(UserMemory).where(UserMemory.conversation_id == conversation_id))
+
+    # Messages cascade via the Conversation relationship
+    await db.delete(conv)
+    await db.commit()
+

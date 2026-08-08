@@ -1,0 +1,36 @@
+- generic [ref=e45]:
+  - complementary [ref=e46]:
+    - generic [ref=e47]:
+      - img "PaathShala AI Logo"
+      - generic [ref=e48]: PaathShala AI
+    - navigation [ref=e49]:
+      - link "home Dashboard" [ref=e50] [cursor=pointer]:
+        - /url: /dashboard
+        - generic [ref=e51]: home
+        - text: Dashboard
+      - link "chat_bubble AI Tutor" [ref=e52] [cursor=pointer]:
+        - /url: /ai-tutor
+        - generic [ref=e53]: chat_bubble
+        - text: AI Tutor
+      - link "check_box Quizzes" [ref=e54] [cursor=pointer]:
+        - /url: /quizzes
+        - generic [ref=e55]: check_box
+        - text: Quizzes
+    - generic [ref=e57] [cursor=pointer]:
+      - generic [ref=e58]: person
+      - generic [ref=e60]:
+        - paragraph [ref=e61]: jayantsharma3228
+        - paragraph [ref=e62]: Pro Learner
+      - generic [ref=e63]: logout
+  - generic [ref=e64]:
+    - banner [ref=e65]:
+      - generic [ref=e67] [cursor=pointer]:
+        - generic [ref=e68]: search
+        - generic [ref=e69]: Search or Command+K
+        - generic [ref=e70]:
+          - generic [ref=e71]: ⌘
+          - generic [ref=e72]: K
+      - generic [ref=e73]:
+        - button "notifications" [ref=e74]
+        - button "help_outline" [ref=e76]
+    - main [ref=e78]

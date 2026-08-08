@@ -2,9 +2,12 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from app.core.config import settings
 from app.api.routes import health_router, auth_router, users_router, ai_router, documents_router, agent_router, memory_router, dashboard_router, activity_router, chat_router, ai_providers_router
+from app.api.routes.routing_rules import router as routing_rules_router
 from app.core.exceptions import AITimeoutException, AIRateLimitException, AIConfigurationException, AIBadRequestException
 
 
+# pyrefly: ignore [missing-import]
+from prometheus_fastapi_instrumentator import Instrumentator
 
 
 
@@ -16,12 +19,11 @@ app = FastAPI(
     description="Agentic AI Learning Platform Backend"
 )
 
-# Instrument Prometheus metrics
-try:
-    from prometheus_fastapi_instrumentator import Instrumentator
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
-except ImportError:
-    pass
+# Prometheus metrics
+Instrumentator().instrument(app).expose(
+    app,
+    endpoint="/metrics"
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,6 +65,7 @@ app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(activity_router, prefix="/api/v1")
 app.include_router(chat_router, prefix="/api/v1")
 app.include_router(ai_providers_router, prefix="/api/v1/ai")
+app.include_router(routing_rules_router, prefix="/api/v1")
 
 @app.on_event("startup")
 async def startup_event():

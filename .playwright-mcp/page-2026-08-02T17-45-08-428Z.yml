@@ -1,0 +1,36 @@
+- main [ref=f2e3]:
+  - generic [ref=f2e5]:
+    - generic [ref=f2e6]:
+      - generic [ref=f2e7]:
+        - generic [ref=f2e8]: neurology
+        - heading "Welcome back" [level=1] [ref=f2e11]
+        - paragraph [ref=f2e12]: Continue your AI learning journey.
+      - generic [ref=f2e13]:
+        - generic [ref=f2e14]:
+          - generic [ref=f2e15]: Email
+          - generic [ref=f2e16]:
+            - generic: mail
+            - textbox "Email" [ref=f2e17]:
+              - /placeholder: name@university.edu
+        - generic [ref=f2e18]:
+          - generic [ref=f2e19]:
+            - generic [ref=f2e20]: Password
+            - link "Forgot?" [ref=f2e21] [cursor=pointer]:
+              - /url: /forgot-password
+          - generic [ref=f2e22]:
+            - generic: lock
+            - textbox "Password" [ref=f2e23]:
+              - /placeholder: ••••••••
+        - button "Sign In arrow_forward" [ref=f2e24]:
+          - generic [ref=f2e26]:
+            - text: Sign In
+            - generic [ref=f2e27]: arrow_forward
+      - generic [ref=f2e28]: OR
+      - button "Continue with Google" [ref=f2e31]
+      - paragraph [ref=f2e37]:
+        - text: Don't have an account?
+        - link "Sign up" [ref=f2e38] [cursor=pointer]:
+          - /url: /register
+    - paragraph [ref=f2e40]:
+      - generic [ref=f2e41]: lock
+      - text: Secure encrypted connection

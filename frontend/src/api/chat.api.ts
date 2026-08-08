@@ -43,5 +43,9 @@ export const chatApi = {
   getConversationContext: async (conversationId: string): Promise<ConversationContextResponse> => {
     const response = await api.get(`/api/v1/chat/conversations/${conversationId}/context`);
     return response.data;
+  },
+
+  deleteConversation: async (conversationId: string): Promise<void> => {
+    await api.delete(`/api/v1/chat/conversations/${conversationId}`);
   }
 };

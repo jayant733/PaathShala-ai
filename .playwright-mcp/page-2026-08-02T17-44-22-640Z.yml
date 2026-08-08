@@ -1,0 +1,549 @@
+- generic [ref=f1e3]:
+  - banner [ref=f1e4]:
+    - generic [ref=f1e6]:
+      - link "neurology PaathShala AI" [ref=f1e7] [cursor=pointer]:
+        - /url: /
+        - generic [ref=f1e8]: neurology
+        - generic [ref=f1e10]: PaathShala AI
+      - navigation [ref=f1e11]:
+        - link "Features" [ref=f1e12] [cursor=pointer]:
+          - /url: "#features"
+        - link "Capabilities" [ref=f1e13] [cursor=pointer]:
+          - /url: "#capabilities"
+        - link "How it works" [ref=f1e14] [cursor=pointer]:
+          - /url: "#how-it-works"
+        - link "Pricing" [ref=f1e15] [cursor=pointer]:
+          - /url: "#pricing"
+        - link "FAQ" [ref=f1e16] [cursor=pointer]:
+          - /url: "#faq"
+      - generic [ref=f1e17]:
+        - link "Sign In" [ref=f1e18] [cursor=pointer]:
+          - /url: /login
+        - link "Start Learning" [ref=f1e20] [cursor=pointer]:
+          - /url: /ai-tutor
+  - main [ref=f1e21]:
+    - generic [ref=f1e24]:
+      - generic [ref=f1e25]:
+        - generic [ref=f1e26]:
+          - generic [ref=f1e27]: All local models online
+          - heading "Chat, learn & build with AI — the best model answers every time." [level=1] [ref=f1e33]
+          - paragraph [ref=f1e35]:
+            - text: PaathShala AI connects local models —
+            - generic [ref=f1e36]: Qwen2.5-Coder,
+            - generic [ref=f1e37]: Llama 3,
+            - generic [ref=f1e38]: Gemma
+            - text: — into one intelligent tutor. Each prompt is analyzed and routed to the model strongest at the task, automatically.
+          - generic [ref=f1e40]:
+            - link "Start Chatting with AI arrow_forward" [ref=f1e42] [cursor=pointer]:
+              - /url: /ai-tutor
+              - text: Start Chatting with AI
+              - generic [ref=f1e43]: arrow_forward
+            - link "See How It Works" [ref=f1e45] [cursor=pointer]:
+              - /url: "#how-it-works"
+          - generic [ref=f1e47]:
+            - generic [ref=f1e48]: Powered by
+            - generic [ref=f1e49]: Qwen2.5-Coder
+            - generic [ref=f1e51]: Llama 3
+            - generic [ref=f1e53]: Gemma
+        - generic [ref=f1e57]:
+          - generic [ref=f1e62]:
+            - generic [ref=f1e63]:
+              - generic [ref=f1e64]: psychology
+              - generic [ref=f1e66]: Intent Router
+            - paragraph [ref=f1e69]: Latency 12ms
+          - generic [ref=f1e71]:
+            - generic [ref=f1e72]: Model cluster
+            - generic [ref=f1e73]: memory
+      - generic [ref=f1e79]:
+        - generic [ref=f1e80]:
+          - generic [ref=f1e81]:
+            - generic [ref=f1e83]:
+              - generic [ref=f1e84]: "0"
+              - generic [ref=f1e85]: "1"
+              - generic [ref=f1e86]: "2"
+              - generic [ref=f1e87]: "3"
+              - generic [ref=f1e88]: "4"
+              - generic [ref=f1e89]: "5"
+              - generic [ref=f1e90]: "6"
+              - generic [ref=f1e91]: "7"
+              - generic [ref=f1e92]: "8"
+              - generic [ref=f1e93]: "9"
+              - generic [ref=f1e94]: "0"
+            - generic [ref=f1e96]:
+              - generic [ref=f1e97]: "0"
+              - generic [ref=f1e98]: "1"
+              - generic [ref=f1e99]: "2"
+              - generic [ref=f1e100]: "3"
+              - generic [ref=f1e101]: "4"
+              - generic [ref=f1e102]: "5"
+              - generic [ref=f1e103]: "6"
+              - generic [ref=f1e104]: "7"
+              - generic [ref=f1e105]: "8"
+              - generic [ref=f1e106]: "9"
+              - generic [ref=f1e107]: "0"
+            - text: ms
+          - generic [ref=f1e108]: routing latency
+        - generic [ref=f1e109]:
+          - generic [ref=f1e112]:
+            - generic [ref=f1e113]: "0"
+            - generic [ref=f1e114]: "1"
+            - generic [ref=f1e115]: "2"
+            - generic [ref=f1e116]: "3"
+            - generic [ref=f1e117]: "4"
+            - generic [ref=f1e118]: "5"
+            - generic [ref=f1e119]: "6"
+            - generic [ref=f1e120]: "7"
+            - generic [ref=f1e121]: "8"
+            - generic [ref=f1e122]: "9"
+            - generic [ref=f1e123]: "0"
+          - generic [ref=f1e124]: local models
+        - generic [ref=f1e125]:
+          - generic [ref=f1e126]:
+            - generic [ref=f1e128]:
+              - generic [ref=f1e129]: "0"
+              - generic [ref=f1e130]: "1"
+              - generic [ref=f1e131]: "2"
+              - generic [ref=f1e132]: "3"
+              - generic [ref=f1e133]: "4"
+              - generic [ref=f1e134]: "5"
+              - generic [ref=f1e135]: "6"
+              - generic [ref=f1e136]: "7"
+              - generic [ref=f1e137]: "8"
+              - generic [ref=f1e138]: "9"
+              - generic [ref=f1e139]: "0"
+            - generic [ref=f1e141]:
+              - generic [ref=f1e142]: "0"
+              - generic [ref=f1e143]: "1"
+              - generic [ref=f1e144]: "2"
+              - generic [ref=f1e145]: "3"
+              - generic [ref=f1e146]: "4"
+              - generic [ref=f1e147]: "5"
+              - generic [ref=f1e148]: "6"
+              - generic [ref=f1e149]: "7"
+              - generic [ref=f1e150]: "8"
+              - generic [ref=f1e151]: "9"
+              - generic [ref=f1e152]: "0"
+            - generic [ref=f1e154]:
+              - generic [ref=f1e155]: "0"
+              - generic [ref=f1e156]: "1"
+              - generic [ref=f1e157]: "2"
+              - generic [ref=f1e158]: "3"
+              - generic [ref=f1e159]: "4"
+              - generic [ref=f1e160]: "5"
+              - generic [ref=f1e161]: "6"
+              - generic [ref=f1e162]: "7"
+              - generic [ref=f1e163]: "8"
+              - generic [ref=f1e164]: "9"
+              - generic [ref=f1e165]: "0"
+            - text: "%"
+          - generic [ref=f1e166]: on-device · private
+        - generic [ref=f1e167]:
+          - generic [ref=f1e168]:
+            - generic [ref=f1e170]:
+              - generic [ref=f1e171]: "0"
+              - generic [ref=f1e172]: "1"
+              - generic [ref=f1e173]: "2"
+              - generic [ref=f1e174]: "3"
+              - generic [ref=f1e175]: "4"
+              - generic [ref=f1e176]: "5"
+              - generic [ref=f1e177]: "6"
+              - generic [ref=f1e178]: "7"
+              - generic [ref=f1e179]: "8"
+              - generic [ref=f1e180]: "9"
+              - generic [ref=f1e181]: "0"
+            - generic [ref=f1e183]:
+              - generic [ref=f1e184]: "0"
+              - generic [ref=f1e185]: "1"
+              - generic [ref=f1e186]: "2"
+              - generic [ref=f1e187]: "3"
+              - generic [ref=f1e188]: "4"
+              - generic [ref=f1e189]: "5"
+              - generic [ref=f1e190]: "6"
+              - generic [ref=f1e191]: "7"
+              - generic [ref=f1e192]: "8"
+              - generic [ref=f1e193]: "9"
+              - generic [ref=f1e194]: "0"
+            - text: +
+          - generic [ref=f1e195]: benchmarks ranked
+    - generic [ref=f1e197]:
+      - paragraph [ref=f1e199]: Works with the stack you already use
+      - generic [ref=f1e201]:
+        - generic [ref=f1e202]: Qwen2.5-Coder
+        - generic [ref=f1e204]: Llama 3
+        - generic [ref=f1e206]: Gemma
+        - generic [ref=f1e208]: Ollama
+        - generic [ref=f1e210]: GitHub
+        - generic [ref=f1e212]: VS Code
+        - generic [ref=f1e214]: Python
+        - generic [ref=f1e216]: Docker
+        - generic [ref=f1e218]: Jupyter
+        - generic [ref=f1e220]: Qwen2.5-Coder
+        - generic [ref=f1e222]: Llama 3
+        - generic [ref=f1e224]: Gemma
+        - generic [ref=f1e226]: Ollama
+        - generic [ref=f1e228]: GitHub
+        - generic [ref=f1e230]: VS Code
+        - generic [ref=f1e232]: Python
+        - generic [ref=f1e234]: Docker
+        - generic [ref=f1e236]: Jupyter
+    - generic [ref=f1e239]:
+      - generic [ref=f1e240]:
+        - generic [ref=f1e241]: Features
+        - heading "One tutor for every kind of question. The right model answers, every time." [level=2] [ref=f1e243]
+        - paragraph [ref=f1e244]: From a quick code fix to a full study plan — every component is crafted for the perfect learning experience.
+      - generic [ref=f1e245]:
+        - generic [ref=f1e252]:
+          - generic [ref=f1e253]: account_tree
+          - generic [ref=f1e255]:
+            - heading "Smart auto-routing" [level=3] [ref=f1e256]
+            - paragraph [ref=f1e257]: Every prompt is matched to the model best at the task — planning, coding, or quizzes — automatically.
+        - generic [ref=f1e260]:
+          - generic [ref=f1e261]:
+            - heading "Best-in-class coding" [level=3] [ref=f1e262]
+            - generic [ref=f1e263]: code
+          - paragraph [ref=f1e264]: Qwen2.5-Coder handles your code questions, from a binary search to a full repo walkthrough.
+        - generic [ref=f1e267]:
+          - generic [ref=f1e268]:
+            - heading "Quizzes & learning" [level=3] [ref=f1e269]
+            - generic [ref=f1e270]: quiz
+          - paragraph [ref=f1e271]: Practice quizzes that grade your answers and adapt to what you need next.
+        - generic [ref=f1e274]:
+          - generic [ref=f1e275]:
+            - generic [ref=f1e276]: hub
+            - heading "GitHub connected" [level=3] [ref=f1e277]
+          - paragraph [ref=f1e278]: Ask questions about your repositories with the model best suited to explain them.
+        - generic [ref=f1e281]:
+          - generic [ref=f1e282]:
+            - generic [ref=f1e283]: lock
+            - heading "Private by default" [level=3] [ref=f1e284]
+          - paragraph [ref=f1e285]: Runs fully on your machine — your chats and code never leave your device.
+        - generic [ref=f1e288]:
+          - generic [ref=f1e289]:
+            - generic [ref=f1e290]: bolt
+            - heading "Sub-15ms routing" [level=3] [ref=f1e291]
+          - paragraph [ref=f1e292]: A lightweight router decides the ideal model before you finish typing.
+        - generic [ref=f1e294]:
+          - generic [ref=f1e295]:
+            - generic [ref=f1e297]:
+              - generic [ref=f1e299]:
+                - generic [ref=f1e300]: "0"
+                - generic [ref=f1e301]: "1"
+                - generic [ref=f1e302]: "2"
+                - generic [ref=f1e303]: "3"
+                - generic [ref=f1e304]: "4"
+                - generic [ref=f1e305]: "5"
+                - generic [ref=f1e306]: "6"
+                - generic [ref=f1e307]: "7"
+                - generic [ref=f1e308]: "8"
+                - generic [ref=f1e309]: "9"
+                - generic [ref=f1e310]: "0"
+              - generic [ref=f1e312]:
+                - generic [ref=f1e313]: "0"
+                - generic [ref=f1e314]: "1"
+                - generic [ref=f1e315]: "2"
+                - generic [ref=f1e316]: "3"
+                - generic [ref=f1e317]: "4"
+                - generic [ref=f1e318]: "5"
+                - generic [ref=f1e319]: "6"
+                - generic [ref=f1e320]: "7"
+                - generic [ref=f1e321]: "8"
+                - generic [ref=f1e322]: "9"
+                - generic [ref=f1e323]: "0"
+              - text: ms
+            - generic [ref=f1e324]: routing latency
+          - paragraph [ref=f1e325]: A lightweight router decides the ideal model before you finish typing — rated on capability, benchmarks, speed and resources.
+          - link "Try it arrow_forward" [ref=f1e326] [cursor=pointer]:
+            - /url: /ai-tutor
+            - text: Try it
+            - generic [ref=f1e327]: arrow_forward
+    - generic [ref=f1e329]:
+      - generic [ref=f1e330]:
+        - generic [ref=f1e331]: AI capabilities
+        - heading "Engineered for trust, speed and accuracy" [level=2] [ref=f1e333]
+        - paragraph [ref=f1e334]: Every layer of the router is designed to feel instant and stay private — without compromising on which model answers.
+      - generic [ref=f1e335]:
+        - generic [ref=f1e338]:
+          - generic [ref=f1e339]: lock
+          - heading "Fully local & private" [level=3] [ref=f1e348]
+          - paragraph [ref=f1e349]: Runs entirely on your machine. Chats and code never leave your device — no cloud, no tracking.
+        - generic [ref=f1e352]:
+          - generic [ref=f1e353]: bolt
+          - heading "Sub-15ms routing" [level=3] [ref=f1e362]
+          - paragraph [ref=f1e363]: A lightweight router classifies intent and picks the winning model before you finish typing.
+        - generic [ref=f1e366]:
+          - generic [ref=f1e367]: tune
+          - heading "Benchmark-ranked selection" [level=3] [ref=f1e376]
+          - paragraph [ref=f1e377]: Every model is scored on capability, benchmarks, speed and resources — the best one always answers.
+    - generic [ref=f1e379]:
+      - generic [ref=f1e380]:
+        - generic [ref=f1e381]: How it works
+        - heading "Every prompt, matched to its ideal model" [level=2] [ref=f1e383]
+        - paragraph [ref=f1e384]: From raw prompt to the best possible answer — a transparent pipeline you never have to think about.
+      - generic [ref=f1e387]:
+        - generic [ref=f1e390]:
+          - generic [ref=f1e391]:
+            - generic [ref=f1e393]: chat_bubble
+            - generic [ref=f1e394]: "1"
+          - heading "Your question" [level=3] [ref=f1e395]
+          - paragraph [ref=f1e396]: The prompt you type
+        - generic [ref=f1e399]:
+          - generic [ref=f1e400]:
+            - generic [ref=f1e402]: psychology
+            - generic [ref=f1e403]: "2"
+          - heading "Intent detection" [level=3] [ref=f1e404]
+          - paragraph [ref=f1e405]: Planning, coding, or a quiz?
+        - generic [ref=f1e408]:
+          - generic [ref=f1e409]:
+            - generic [ref=f1e411]: tune
+            - generic [ref=f1e412]: "3"
+          - heading "Model ranking" [level=3] [ref=f1e413]
+          - paragraph [ref=f1e414]: Capability · benchmark · speed · resources
+        - generic [ref=f1e417]:
+          - generic [ref=f1e418]:
+            - generic [ref=f1e420]: memory
+            - generic [ref=f1e421]: "4"
+          - heading "Best model" [level=3] [ref=f1e422]
+          - paragraph [ref=f1e423]: The one strongest at the task
+        - generic [ref=f1e426]:
+          - generic [ref=f1e427]:
+            - generic [ref=f1e429]: check_circle
+            - generic [ref=f1e430]: "5"
+          - heading "Best answer" [level=3] [ref=f1e431]
+          - paragraph [ref=f1e432]: A reply from the winning model
+    - generic [ref=f1e434]:
+      - generic [ref=f1e435]:
+        - generic [ref=f1e436]: Loved by learners & builders
+        - heading "A tutor that knows its strengths" [level=2] [ref=f1e438]
+        - paragraph [ref=f1e439]: Real feedback from people who route every question to the model that answers it best.
+      - generic [ref=f1e442]:
+        - figure "school Aarav S. CS Student" [ref=f1e443]:
+          - generic [ref=f1e444]:
+            - generic [ref=f1e445]: star
+            - generic [ref=f1e446]: star
+            - generic [ref=f1e447]: star
+            - generic [ref=f1e448]: star
+            - generic [ref=f1e449]: star
+          - blockquote [ref=f1e450]: “I ask it to explain a repo and it routes to the model that actually reads code best. Feels like a tutor that knows its strengths.”
+          - generic [ref=f1e451]:
+            - generic [ref=f1e452]: school
+            - generic [ref=f1e454]:
+              - generic [ref=f1e455]: Aarav S.
+              - generic [ref=f1e456]: CS Student
+        - figure "code Priya M. Developer" [ref=f1e457]:
+          - generic [ref=f1e458]:
+            - generic [ref=f1e459]: star
+            - generic [ref=f1e460]: star
+            - generic [ref=f1e461]: star
+            - generic [ref=f1e462]: star
+            - generic [ref=f1e463]: star
+          - blockquote [ref=f1e464]: “Everything runs locally — no account, no uploads. My code stays mine, and the answers are fast.”
+          - generic [ref=f1e465]:
+            - generic [ref=f1e466]: code
+            - generic [ref=f1e468]:
+              - generic [ref=f1e469]: Priya M.
+              - generic [ref=f1e470]: Developer
+        - figure "psychology Rohan K. ML Engineer" [ref=f1e471]:
+          - generic [ref=f1e472]:
+            - generic [ref=f1e473]: star
+            - generic [ref=f1e474]: star
+            - generic [ref=f1e475]: star
+            - generic [ref=f1e476]: star
+            - generic [ref=f1e477]: star
+          - blockquote [ref=f1e478]: “The router picked the perfect model for my quiz prep. It adapts to exactly what I need next.”
+          - generic [ref=f1e479]:
+            - generic [ref=f1e480]: psychology
+            - generic [ref=f1e482]:
+              - generic [ref=f1e483]: Rohan K.
+              - generic [ref=f1e484]: ML Engineer
+        - figure "auto_awesome Neha R. Research Assistant" [ref=f1e485]:
+          - generic [ref=f1e486]:
+            - generic [ref=f1e487]: star
+            - generic [ref=f1e488]: star
+            - generic [ref=f1e489]: star
+            - generic [ref=f1e490]: star
+            - generic [ref=f1e491]: star
+          - blockquote [ref=f1e492]: “Sub-15ms routing is real. Questions feel instant, and I trust the ranking every time.”
+          - generic [ref=f1e493]:
+            - generic [ref=f1e494]: auto_awesome
+            - generic [ref=f1e496]:
+              - generic [ref=f1e497]: Neha R.
+              - generic [ref=f1e498]: Research Assistant
+        - figure "school Aarav S. CS Student" [ref=f1e499]:
+          - generic [ref=f1e500]:
+            - generic [ref=f1e501]: star
+            - generic [ref=f1e502]: star
+            - generic [ref=f1e503]: star
+            - generic [ref=f1e504]: star
+            - generic [ref=f1e505]: star
+          - blockquote [ref=f1e506]: “I ask it to explain a repo and it routes to the model that actually reads code best. Feels like a tutor that knows its strengths.”
+          - generic [ref=f1e507]:
+            - generic [ref=f1e508]: school
+            - generic [ref=f1e510]:
+              - generic [ref=f1e511]: Aarav S.
+              - generic [ref=f1e512]: CS Student
+        - figure "code Priya M. Developer" [ref=f1e513]:
+          - generic [ref=f1e514]:
+            - generic [ref=f1e515]: star
+            - generic [ref=f1e516]: star
+            - generic [ref=f1e517]: star
+            - generic [ref=f1e518]: star
+            - generic [ref=f1e519]: star
+          - blockquote [ref=f1e520]: “Everything runs locally — no account, no uploads. My code stays mine, and the answers are fast.”
+          - generic [ref=f1e521]:
+            - generic [ref=f1e522]: code
+            - generic [ref=f1e524]:
+              - generic [ref=f1e525]: Priya M.
+              - generic [ref=f1e526]: Developer
+        - figure "psychology Rohan K. ML Engineer" [ref=f1e527]:
+          - generic [ref=f1e528]:
+            - generic [ref=f1e529]: star
+            - generic [ref=f1e530]: star
+            - generic [ref=f1e531]: star
+            - generic [ref=f1e532]: star
+            - generic [ref=f1e533]: star
+          - blockquote [ref=f1e534]: “The router picked the perfect model for my quiz prep. It adapts to exactly what I need next.”
+          - generic [ref=f1e535]:
+            - generic [ref=f1e536]: psychology
+            - generic [ref=f1e538]:
+              - generic [ref=f1e539]: Rohan K.
+              - generic [ref=f1e540]: ML Engineer
+        - figure "auto_awesome Neha R. Research Assistant" [ref=f1e541]:
+          - generic [ref=f1e542]:
+            - generic [ref=f1e543]: star
+            - generic [ref=f1e544]: star
+            - generic [ref=f1e545]: star
+            - generic [ref=f1e546]: star
+            - generic [ref=f1e547]: star
+          - blockquote [ref=f1e548]: “Sub-15ms routing is real. Questions feel instant, and I trust the ranking every time.”
+          - generic [ref=f1e549]:
+            - generic [ref=f1e550]: auto_awesome
+            - generic [ref=f1e552]:
+              - generic [ref=f1e553]: Neha R.
+              - generic [ref=f1e554]: Research Assistant
+    - generic [ref=f1e556]:
+      - generic [ref=f1e557]:
+        - generic [ref=f1e558]: Pricing
+        - heading "Simple plans, local by default" [level=2] [ref=f1e560]
+        - paragraph [ref=f1e561]: Start free. Scale when your learning does.
+      - generic [ref=f1e562]:
+        - generic [ref=f1e566]:
+          - generic [ref=f1e567]:
+            - heading "Free" [level=3] [ref=f1e568]
+            - generic [ref=f1e569]: $0
+            - paragraph [ref=f1e571]: For getting started with local AI.
+          - list [ref=f1e572]:
+            - listitem [ref=f1e573]:
+              - generic [ref=f1e574]: check_circle
+              - text: 1 active model
+            - listitem [ref=f1e575]:
+              - generic [ref=f1e576]: check_circle
+              - text: Basic routing
+            - listitem [ref=f1e577]:
+              - generic [ref=f1e578]: check_circle
+              - text: Community support
+          - link "Start free" [ref=f1e579] [cursor=pointer]:
+            - /url: /register
+        - generic [ref=f1e583]:
+          - generic [ref=f1e584]:
+            - generic [ref=f1e585]: stars
+            - text: Most popular
+          - generic [ref=f1e586]:
+            - heading "Pro" [level=3] [ref=f1e587]
+            - generic [ref=f1e588]:
+              - generic [ref=f1e589]: $12
+              - generic [ref=f1e590]: /mo
+            - paragraph [ref=f1e591]: For serious learners and builders.
+          - list [ref=f1e592]:
+            - listitem [ref=f1e593]:
+              - generic [ref=f1e594]: check_circle
+              - text: All local models
+            - listitem [ref=f1e595]:
+              - generic [ref=f1e596]: check_circle
+              - text: Smart auto-routing
+            - listitem [ref=f1e597]:
+              - generic [ref=f1e598]: check_circle
+              - text: Quizzes & grading
+            - listitem [ref=f1e599]:
+              - generic [ref=f1e600]: check_circle
+              - text: Priority support
+          - link "Go Pro" [ref=f1e601] [cursor=pointer]:
+            - /url: /register
+        - generic [ref=f1e605]:
+          - generic [ref=f1e606]:
+            - heading "Enterprise" [level=3] [ref=f1e607]
+            - generic [ref=f1e608]: Custom
+            - paragraph [ref=f1e610]: For teams and on-prem deployments.
+          - list [ref=f1e611]:
+            - listitem [ref=f1e612]:
+              - generic [ref=f1e613]: check_circle
+              - text: Unlimited models
+            - listitem [ref=f1e614]:
+              - generic [ref=f1e615]: check_circle
+              - text: Self-hosted
+            - listitem [ref=f1e616]:
+              - generic [ref=f1e617]: check_circle
+              - text: SSO & audit logs
+            - listitem [ref=f1e618]:
+              - generic [ref=f1e619]: check_circle
+              - text: Dedicated engineer
+          - link "Contact sales" [ref=f1e620] [cursor=pointer]:
+            - /url: /register
+    - generic [ref=f1e622]:
+      - generic [ref=f1e623]:
+        - generic [ref=f1e624]: FAQ
+        - heading "Frequently asked questions" [level=2] [ref=f1e626]
+      - generic [ref=f1e627]:
+        - generic [ref=f1e628]:
+          - button "Does anything leave my device?" [expanded] [ref=f1e629] [cursor=pointer]:
+            - generic [ref=f1e631]: add
+          - region [ref=f1e633]:
+            - generic [ref=f1e634]: No. PaathShala AI runs fully on your machine — your chats, code and study history never leave your device.
+        - button "Which models are available?" [ref=f1e636] [cursor=pointer]:
+          - generic [ref=f1e638]: add
+        - button "How does auto-routing decide the best model?" [ref=f1e641] [cursor=pointer]:
+          - generic [ref=f1e643]: add
+        - button "Is it free?" [ref=f1e646] [cursor=pointer]:
+          - generic [ref=f1e648]: add
+        - button "Can I use it for coding?" [ref=f1e651] [cursor=pointer]:
+          - generic [ref=f1e653]: add
+    - generic [ref=f1e659]:
+      - heading "Ready to learn with the best model?" [level=2] [ref=f1e660]
+      - paragraph [ref=f1e661]: Start a chat and watch every question get routed to the model that answers it best.
+      - generic [ref=f1e662]:
+        - link "Start Chatting with AI arrow_forward" [ref=f1e664] [cursor=pointer]:
+          - /url: /ai-tutor
+          - text: Start Chatting with AI
+          - generic [ref=f1e665]: arrow_forward
+        - link "Sign in" [ref=f1e667] [cursor=pointer]:
+          - /url: /login
+  - contentinfo [ref=f1e668]:
+    - generic [ref=f1e669]:
+      - generic [ref=f1e670]:
+        - generic [ref=f1e671]:
+          - generic [ref=f1e672]:
+            - generic [ref=f1e673]: neurology
+            - generic [ref=f1e675]: PaathShala
+          - paragraph [ref=f1e676]: Your multi-model AI tutor for chat, coding & quizzes. Building the future of AI-powered learning.
+        - generic [ref=f1e677]:
+          - heading "Product" [level=4] [ref=f1e678]
+          - list [ref=f1e679]:
+            - listitem [ref=f1e680] [cursor=pointer]: AI Tutor
+            - listitem [ref=f1e681] [cursor=pointer]: Smart Router
+            - listitem [ref=f1e682] [cursor=pointer]: Quiz Engine
+        - generic [ref=f1e683]:
+          - heading "Company" [level=4] [ref=f1e684]
+          - list [ref=f1e685]:
+            - listitem [ref=f1e686] [cursor=pointer]: About
+            - listitem [ref=f1e687] [cursor=pointer]: Careers
+            - listitem [ref=f1e688] [cursor=pointer]: Security
+        - generic [ref=f1e689]:
+          - heading "Support" [level=4] [ref=f1e690]
+          - list [ref=f1e691]:
+            - listitem [ref=f1e692] [cursor=pointer]: Documentation
+            - listitem [ref=f1e693] [cursor=pointer]: API Status
+            - listitem [ref=f1e694] [cursor=pointer]: GitHub
+      - generic [ref=f1e695]:
+        - paragraph [ref=f1e696]: © 2026 PaathShala AI. All rights reserved.
+        - generic [ref=f1e697]:
+          - generic [ref=f1e698] [cursor=pointer]: Privacy Policy
+          - generic [ref=f1e699] [cursor=pointer]: Terms of Service

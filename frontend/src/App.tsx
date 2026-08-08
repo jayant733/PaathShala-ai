@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 import { PrivateRoute, PublicRoute } from './routes/RouteWrappers';
 import DashboardLayout from './layouts/DashboardLayout';
 
@@ -20,9 +21,10 @@ const PageLoader = () => (
 
 function App() {
   return (
-    <BrowserRouter>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           {/* Public Routes */}
           <Route element={<PublicRoute />}>
             <Route path="/" element={<Landing />} />
@@ -37,9 +39,10 @@ function App() {
             <Route path="/quizzes" element={<DashboardLayout><Quizzes /></DashboardLayout>} />
             <Route path="/agent-chat" element={<DashboardLayout><AgentChat /></DashboardLayout>} />
           </Route>
-        </Routes>
-      </Suspense>
-    </BrowserRouter>
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </MotionConfig>
   );
 }
 

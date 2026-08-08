@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { aiApi } from '../../api/ai.api';
-import type { HealthStatus } from '../../api/ai.api';
 import { userApi } from '../../api/user.api';
 import type { UserAIPreference } from '../../api/user.api';
 import { Cloud, Cpu, ChevronDown, Check, Loader2, Zap } from 'lucide-react';

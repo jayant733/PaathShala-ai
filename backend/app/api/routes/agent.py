@@ -6,8 +6,23 @@ from app.database.models.user import User
 from app.services.agent_service import AgentService
 from app.schemas.agent import AgentChatRequest, AgentChatResponse
 from app.ai.providers.context import set_ai_context
+from app.services import routing_service
 
 router = APIRouter(prefix="/agent", tags=["agent"])
+
+
+async def _resolve_auto_target(db, user_id, message):
+    """In auto mode, consult the user's routing table to pick a concrete target.
+
+    Returns ``(provider, model, mode)``. If a rule matches, forces that model
+    (manual mode). Otherwise keeps auto (existing Gemini -> Ollama fallback).
+    """
+    rules = await routing_service.list_rules(db, user_id)
+    target = routing_service.resolve_target(message, rules)
+    if target:
+        provider, model = target
+        return provider, model, "manual"
+    return None, None, "auto"
 
 @router.post("/chat", response_model=AgentChatResponse)
 async def chat_with_agent(
@@ -25,8 +40,16 @@ async def chat_with_agent(
 
         # Set contextvar for the current async task
         mode = request.ai_mode or ("auto" if not request.provider else "manual")
-        set_ai_context(provider=request.provider, model_name=request.model_name, mode=mode)
-        
+        provider = request.provider
+        model_name = request.model_name
+
+        if mode == "auto":
+            provider, model_name, mode = await _resolve_auto_target(
+                agent_service.session, current_user.id, request.message
+            )
+
+        set_ai_context(provider=provider, model_name=model_name, mode=mode)
+
         result = await agent_service.chat(
             user_id=current_user.id,
             message=request.message,
@@ -58,11 +81,19 @@ async def stream_chat_with_agent(
 
     # Set contextvar for the current async task
     mode = request.ai_mode or ("auto" if not request.provider else "manual")
-    set_ai_context(provider=request.provider, model_name=request.model_name, mode=mode)
-    
+    provider = request.provider
+    model_name = request.model_name
+
+    if mode == "auto":
+        provider, model_name, mode = await _resolve_auto_target(
+            agent_service.session, current_user.id, request.message
+        )
+
+    set_ai_context(provider=provider, model_name=model_name, mode=mode)
+
     async def event_generator():
         try:
-            from app.ai.prompts.tutor_prompts import TUTOR_SYSTEM_PROMPT
+            from app.ai.prompts.tutor_prompts import get_presentation_system_prompt
             from app.database.models.chat import Conversation, Message
             from sqlalchemy.future import select
             
@@ -88,8 +119,10 @@ async def stream_chat_with_agent(
             agent_service.session.add(user_msg)
             await agent_service.session.commit()
             
+            logger.info(f"[Agent Route] Incoming user message for conv {conversation_id}: {request.message[:100]}...")
+            
             # Process RAG if document is linked
-            system_prompt = TUTOR_SYSTEM_PROMPT
+            system_prompt = get_presentation_system_prompt()
             
             if conv.document_id:
                 try:
@@ -135,6 +168,7 @@ async def stream_chat_with_agent(
             ]
             
             # Start stream with history
+            logger.info(f"[Agent Route] Sending request to ProviderManager (History length: {len(history)}).")
             stream = ai_service.provider.stream_response(
                 prompt=request.message,
                 system_instruction=system_prompt,
@@ -161,8 +195,11 @@ async def stream_chat_with_agent(
             )
             agent_service.session.add(assistant_msg)
             await agent_service.session.commit()
+            
+            logger.info(f"[Agent Route] Received full response from model '{final_model}' ({len(full_response)} chars).")
                 
         except Exception as e:
+            logger.error(f"[Agent Route] AI provider error: {str(e)}", exc_info=True)
             yield f"data: {json.dumps({'error': str(e), 'done': True})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

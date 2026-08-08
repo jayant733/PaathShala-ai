@@ -3,10 +3,14 @@ import { useSearchParams } from 'react-router-dom';
 import { agentApi } from '../api/agent.api';
 import { chatApi } from '../api/chat.api';
 import type { ChatMessage, ConversationItem, ConversationContextResponse } from '../api/chat.api';
-import AIResponseRenderer from '../components/chat/AIResponseRenderer';
 import ModelSelector from '../components/chat/ModelSelector';
+import RoutingTable from '../components/chat/RoutingTable';
+import LearningProfile from '../components/chat/LearningProfile';
+import VirtualizedMessageList from '../components/chat/VirtualizedMessageList';
+import { parsePresentation } from '../components/ai-response/parsePresentation';
 import { useAIStore } from '../store/aiStore';
-import { Brain, FileText, Tag, Cpu, RefreshCw, Paperclip, Mic, ArrowUp, Loader2 } from 'lucide-react';
+import { useLearningStore } from '../store/learningStore';
+import { Brain, FileText, Tag, Cpu, RefreshCw, Paperclip, Mic, ArrowUp, Loader2, Square } from 'lucide-react';
 import { documentApi } from '../api/document.api';
 import api from '../api/axios';
 
@@ -20,11 +24,11 @@ export default function AIChat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [routingOpen, setRoutingOpen] = useState(false);
   
   const currentProvider = useAIStore(state => state.provider);
   const currentModel = useAIStore(state => state.model);
-  const currentMode = useAIStore(state => state.mode);
-  
+
   const [ratedMessages, setRatedMessages] = useState<Record<string, 'like' | 'dislike'>>(() => {
     const saved = localStorage.getItem('ratedMessages');
     return saved ? JSON.parse(saved) : {};
@@ -33,18 +37,57 @@ export default function AIChat() {
   useEffect(() => {
     localStorage.setItem('ratedMessages', JSON.stringify(ratedMessages));
   }, [ratedMessages]);
-  
+
+  // Track learning progress from completed presentations.
+  const recordLearning = useLearningStore((s) => s.record);
+  useEffect(() => {
+    messages.forEach((msg) => {
+      if (msg.role !== 'assistant') return;
+      const parsed = parsePresentation(msg.content);
+      if (parsed.status === 'parsed') recordLearning(parsed.presentation);
+    });
+  }, [messages, recordLearning]);
+
+  const focusComposer = useCallback(() => {
+    composerRef.current?.focus();
+  }, []);
+
   const [searchParams, setSearchParams] = useSearchParams();
   
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasHandledInitialPrompt = useRef(false);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+
+  // Whether the chat should keep auto-following the newest content. Disabled
+  // when the user scrolls up, re-enabled when they return to the bottom.
+  const followRef = useRef(true);
   
   // Streaming state and cleanup
   const abortControllerRef = useRef<AbortController | null>(null);
   const [streamingMessage, setStreamingMessage] = useState<string | null>(null);
   const [streamingModel, setStreamingModel] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
+  // Screen-reader announcement text shown when an AI response completes.
+  const [liveAnnouncement, setLiveAnnouncement] = useState('');
+  const prevStreamingRef = useRef<string | null>(null);
+
+  // Announce the completion of a streaming AI response via an aria-live region.
+  // Tracks the streamingMessage transition (present -> null) so history loaded
+  // from the backend is never announced on initial render.
+  useEffect(() => {
+    const wasStreaming = prevStreamingRef.current !== null;
+    prevStreamingRef.current = streamingMessage;
+    if (wasStreaming && streamingMessage === null && !loading) {
+      const last = messages[messages.length - 1];
+      const text = last?.role === 'assistant' ? (last.content || '').trim() : '';
+      setLiveAnnouncement(
+        text
+          ? `AI response ready. ${text.slice(0, 160)}${text.length > 160 ? '…' : ''}`
+          : 'AI response complete.',
+      );
+    }
+  }, [streamingMessage, messages, loading]);
+
   // Document upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingDocument, setIsUploadingDocument] = useState(false);
@@ -178,6 +221,8 @@ export default function AIChat() {
 
   useEffect(() => {
     if (selectedConversationId) {
+      // Opening a conversation means following its newest message.
+      followRef.current = true;
       // Clear previous polls
       pollingTimers.current.forEach(clearTimeout);
       pollingTimers.current = [];
@@ -197,11 +242,35 @@ export default function AIChat() {
     }
   }, [selectedConversationId, fetchConversationData]);
 
-  useEffect(() => {
-    if (messages.length > 0 && !fetching) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // Track whether the user is following the newest content. Auto-follow pauses
+  // when the user scrolls up and resumes once they return to (near) the bottom.
+  // The boolean is driven by the virtualized list's onBottomStateChange; only the
+  // flag is lifted here so a new send can re-enable following.
+  const handleRate = (id: string, vote: 'like' | 'dislike', content: string) => {
+    if (ratedMessages[id]) return;
+    setRatedMessages(prev => ({ ...prev, [id]: vote }));
+
+    if (vote === 'like' && content) {
+      // Optimistically update the UI immediately
+      setContext(prev => ({
+        ...prev,
+        memories: [content, ...prev.memories]
+      }));
+
+      // Send to memory with the current conversation_id so it's scoped per chat
+      api.post('/api/v1/memory', { content, memory_type: 'preference', conversation_id: selectedConversationId })
+        .then(() => {
+          // Refresh context from server to ensure sync
+          if (selectedConversationId) fetchConversationData(selectedConversationId, true);
+        })
+        .catch(err => {
+          console.error(err);
+          alert(`Memory Save Error: ${err.response?.data?.detail || err.message}`);
+          // Revert optimistic update if it fails
+          if (selectedConversationId) fetchConversationData(selectedConversationId, true);
+        });
     }
-  }, [messages, loading, fetching]);
+  };
 
   const triggerContextPolling = (id: string) => {
     // Clear old timers
@@ -228,7 +297,9 @@ export default function AIChat() {
     setInput('');
     setLoading(true);
     setIsGenerating(true);
-    
+    // A new send re-enables auto-follow so the fresh response is tracked.
+    followRef.current = true;
+
     // Clear old controller if exists
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -273,7 +344,7 @@ export default function AIChat() {
         setMessages(prev => [...prev, { 
           id: (Date.now() + 1).toString(), 
           role: 'assistant', 
-          content: 'Error: AI temporarily unavailable', 
+          content: `Error: ${error || 'AI temporarily unavailable'}`, 
           created_at: new Date().toISOString()
         }]);
         setLoading(false);
@@ -334,6 +405,28 @@ export default function AIChat() {
     }
   };
 
+  const handleDeleteConversation = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Delete this conversation?')) return;
+    try {
+      await chatApi.deleteConversation(id);
+      setConversations(prev => prev.filter(c => c.id !== id));
+      delete chatCache.current[id];
+      if (selectedConversationId === id) {
+        setSelectedConversationId(undefined);
+        setMessages([]);
+        setContext({ focus: null, topics: [], memories: [] });
+      }
+      if (pinnedId === id) {
+        localStorage.removeItem('pinned_conversation_id');
+        setPinnedId(null);
+      }
+    } catch (err) {
+      console.error("Failed to delete conversation", err);
+      alert('Failed to delete conversation');
+    }
+  };
+
   const handleTogglePin = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     if (pinnedId === id) {
@@ -367,15 +460,27 @@ export default function AIChat() {
             <h3 className="font-title-md text-title-md text-on-surface flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-primary" /> History
             </h3>
-            <button 
-              onClick={() => setSelectedConversationId(undefined)}
-              className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors group"
-              title="New Chat"
-            >
-              <span className="material-symbols-outlined text-[18px]">add</span>
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setRoutingOpen(true)}
+                className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors"
+                title="Model Routing Table"
+              >
+                <span className="material-symbols-outlined text-[18px]">route</span>
+              </button>
+              <button
+                onClick={() => setSelectedConversationId(undefined)}
+                className="w-8 h-8 rounded-full bg-primary/10 hover:bg-primary/20 flex items-center justify-center text-primary transition-colors group"
+                title="New Chat"
+              >
+                <span className="material-symbols-outlined text-[18px]">add</span>
+              </button>
+            </div>
           </div>
-          
+
+          {/* Learner's journey: progress %, completed lessons, recommended next */}
+          <LearningProfile />
+
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
             {conversations.length === 0 && !fetching && (
               <div className="p-6 text-center mt-4">
@@ -400,18 +505,29 @@ export default function AIChat() {
                     {selectedConversationId === conv.id && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full"></div>
                     )}
-                    <p className={`font-body-sm text-body-sm truncate pr-6 transition-colors ${selectedConversationId === conv.id ? 'text-primary font-medium' : 'text-on-surface group-hover:text-primary'}`}>
+                    <p className={`font-body-sm text-body-sm truncate pr-20 transition-colors ${selectedConversationId === conv.id ? 'text-primary font-medium' : 'text-on-surface group-hover:text-primary'}`}>
                       {conv.title}
                     </p>
-                    <div 
+                    <div
+                      onClick={(e) => handleDeleteConversation(e, conv.id)}
+                      className={`
+                        absolute right-11 p-1.5 rounded-full transition-all duration-200
+                        opacity-0 -translate-x-2 text-on-surface-variant hover:text-error hover:bg-error/10 group-hover:opacity-100 group-hover:translate-x-0
+                      `}
+                      title="Delete chat"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                    </div>
+                    <div
                       onClick={(e) => handleTogglePin(e, conv.id)}
                       className={`
                         absolute right-2 p-1.5 rounded-full transition-all duration-200
-                        ${pinnedId === conv.id 
-                          ? 'opacity-100 text-primary bg-primary/10' 
+                        ${pinnedId === conv.id
+                          ? 'opacity-100 text-primary bg-primary/10'
                           : 'opacity-0 -translate-x-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 group-hover:opacity-100 group-hover:translate-x-0'
                         }
                       `}
+                      title={pinnedId === conv.id ? 'Unpin' : 'Pin chat'}
                     >
                       <span className="material-symbols-outlined text-[16px]">push_pin</span>
                     </div>
@@ -434,18 +550,29 @@ export default function AIChat() {
                     {selectedConversationId === conv.id && (
                       <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-primary rounded-r-full"></div>
                     )}
-                    <p className={`font-body-sm text-body-sm truncate pr-6 transition-colors ${selectedConversationId === conv.id ? 'text-primary font-medium' : 'text-on-surface group-hover:text-primary'}`}>
+                    <p className={`font-body-sm text-body-sm truncate pr-20 transition-colors ${selectedConversationId === conv.id ? 'text-primary font-medium' : 'text-on-surface group-hover:text-primary'}`}>
                       {conv.title}
                     </p>
-                    <div 
+                    <div
+                      onClick={(e) => handleDeleteConversation(e, conv.id)}
+                      className={`
+                        absolute right-11 p-1.5 rounded-full transition-all duration-200
+                        opacity-0 -translate-x-2 text-on-surface-variant hover:text-error hover:bg-error/10 group-hover:opacity-100 group-hover:translate-x-0
+                      `}
+                      title="Delete chat"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">delete</span>
+                    </div>
+                    <div
                       onClick={(e) => handleTogglePin(e, conv.id)}
                       className={`
                         absolute right-2 p-1.5 rounded-full transition-all duration-200
-                        ${pinnedId === conv.id 
-                          ? 'opacity-100 text-primary bg-primary/10' 
+                        ${pinnedId === conv.id
+                          ? 'opacity-100 text-primary bg-primary/10'
                           : 'opacity-0 -translate-x-2 text-on-surface-variant hover:text-primary hover:bg-primary/5 group-hover:opacity-100 group-hover:translate-x-0'
                         }
                       `}
+                      title={pinnedId === conv.id ? 'Unpin' : 'Pin chat'}
                     >
                       <span className="material-symbols-outlined text-[16px]">push_pin</span>
                     </div>
@@ -479,143 +606,38 @@ export default function AIChat() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-stack-lg space-y-stack-lg scroll-smooth" id="chat-container">
-            {messages.length === 0 && !fetching && (
-              <div className="h-full flex flex-col items-center justify-center text-center text-on-surface-variant px-4">
-                <div className="w-20 h-20 rounded-3xl bg-surface-container-highest flex items-center justify-center mb-6 shadow-inner border border-outline-variant/10">
-                  <Brain className="w-10 h-10 text-primary opacity-80" />
-                </div>
-                <h2 className="text-headline-sm font-medium text-on-surface mb-2">How can I help you learn today?</h2>
-                <p className="max-w-md text-body-md text-on-surface-variant/80">
-                  Ask me to break down a complex topic into slides, quiz you, or analyze an uploaded document.
-                </p>
-              </div>
-            )}
-
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} max-w-5xl mx-auto w-full group`}>
-                {msg.role === 'assistant' && (
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center mr-4 mt-1 border border-primary/20">
-                    <Brain className="w-4 h-4 text-primary" />
-                  </div>
-                )}
-                
-                {msg.role === 'user' ? (
-                  <div className="bg-primary text-on-primary rounded-2xl rounded-tr-sm p-4 shadow-sm max-w-[75%]">
-                    <p className="font-body-md text-body-md whitespace-pre-wrap">{msg.content}</p>
-                  </div>
-                ) : (
-                  <div className="flex-1 w-full max-w-[90%]">
-                    {/* Render AI responses via the advanced renderer */}
-                    <AIResponseRenderer content={msg.content} />
-                    
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="text-[10px] text-on-surface-variant font-mono bg-surface-container-highest px-2 py-0.5 rounded border border-outline-variant/10">
-                        {msg.model ? msg.model : (currentProvider === 'gemini' ? 'gemini' : currentModel)}
-                      </div>
-                      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button 
-                          onClick={() => {
-                            if (ratedMessages[msg.id]) return;
-                            setRatedMessages(prev => ({ ...prev, [msg.id]: 'like' }));
-                            // Optimistically update the UI immediately
-                            setContext(prev => ({
-                              ...prev,
-                              memories: [msg.content, ...prev.memories]
-                            }));
-                            
-                            // Send to memory with the current conversation_id so it's scoped per chat
-                            api.post('/api/v1/memory', { content: msg.content, memory_type: 'preference', conversation_id: selectedConversationId })
-                              .then(() => {
-                                // Refresh context from server to ensure sync
-                                if (selectedConversationId) fetchConversationData(selectedConversationId, true);
-                              })
-                              .catch(err => {
-                                console.error(err);
-                                alert(`Memory Save Error: ${err.response?.data?.detail || err.message}`);
-                                // Revert optimistic update if it fails
-                                if (selectedConversationId) fetchConversationData(selectedConversationId, true);
-                              });
-                          }}
-                          disabled={!!ratedMessages[msg.id]}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                            ratedMessages[msg.id] === 'like' ? 'text-primary bg-primary/20' : 'text-on-surface-variant hover:text-primary hover:bg-primary/10'
-                          } ${ratedMessages[msg.id] ? 'cursor-not-allowed opacity-50' : ''}`}
-                        >
-                          <span className="material-symbols-outlined text-[16px]">thumb_up</span>
-                        </button>
-                        <button 
-                          onClick={() => {
-                            if (ratedMessages[msg.id]) return;
-                            setRatedMessages(prev => ({ ...prev, [msg.id]: 'dislike' }));
-                          }}
-                          disabled={!!ratedMessages[msg.id]}
-                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-colors ${
-                            ratedMessages[msg.id] === 'dislike' ? 'text-error bg-error/20' : 'text-on-surface-variant hover:text-error hover:bg-error/10'
-                          } ${ratedMessages[msg.id] ? 'cursor-not-allowed opacity-50' : ''}`}
-                        >
-                          <span className="material-symbols-outlined text-[16px]">thumb_down</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {streamingMessage !== null && (
-              <div className="flex justify-start max-w-5xl mx-auto w-full group">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center mr-4 mt-1 border border-primary/20">
-                  <Brain className="w-4 h-4 text-primary animate-pulse" />
-                </div>
-                <div className="flex-1 w-full max-w-[90%]">
-                  <AIResponseRenderer content={streamingMessage} />
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="text-[10px] text-on-surface-variant font-mono bg-surface-container-highest px-2 py-0.5 rounded border border-outline-variant/10 flex items-center gap-2">
-                      {streamingModel || (currentProvider === 'gemini' ? 'gemini' : currentModel)}
-                      <div className="flex gap-1">
-                        <div className="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
-                        <div className="w-1 h-1 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                        <div className="w-1 h-1 bg-secondary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {loading && streamingMessage === null && (
-              <div className="flex justify-start max-w-5xl mx-auto w-full group">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center mr-4 mt-1 border border-primary/20">
-                  <Brain className="w-4 h-4 text-primary animate-pulse" />
-                </div>
-                <div className="flex items-center gap-3 bg-surface-container-highest px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm border border-outline-variant/10">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                    <div className="w-2 h-2 bg-secondary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-                  </div>
-                  <span className="font-label-md text-label-md text-on-surface-variant italic">PaathShala AI is thinking...</span>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+          <VirtualizedMessageList
+            messages={messages}
+            streamingMessage={streamingMessage}
+            streamingModel={streamingModel}
+            loading={loading}
+            fetching={fetching}
+            provider={currentProvider}
+            currentModel={currentModel}
+            ratedMessages={ratedMessages}
+            followRef={followRef}
+            conversationId={selectedConversationId}
+            onSend={(p) => handleSend(undefined, p)}
+            onFocusInput={focusComposer}
+            onRate={handleRate}
+          />
 
           <div className="p-4 bg-gradient-to-t from-surface-container-low via-surface-container-low/90 to-transparent z-10 pt-10">
             <div className="max-w-4xl mx-auto relative group">
               <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 via-tertiary/10 to-secondary/10 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition duration-1000 group-focus-within:opacity-100"></div>
               <form onSubmit={handleSend} className="relative bg-surface-container-highest rounded-2xl shadow-lg flex flex-col p-2 border border-outline-variant/20">
-                <textarea 
+                <textarea
+                  ref={composerRef}
                   className="w-full bg-transparent resize-none border-none focus:ring-0 p-3 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 min-h-[56px] max-h-48"
                   value={input}
+                  aria-label="Message AI Tutor"
                   onChange={(e) => {
                     setInput(e.target.value);
-                    e.target.style.height = 'auto'; 
+                    e.target.style.height = 'auto';
                     e.target.style.height = e.target.scrollHeight + 'px';
                   }}
                   onKeyDown={handleKeyDown}
-                  placeholder="Message AI Tutor..." 
+                  placeholder="Message AI Tutor..."
                   rows={1}
                 />
                 <div className="flex items-center justify-between px-2 pb-1 pt-2">
@@ -627,38 +649,58 @@ export default function AIChat() {
                       accept=".pdf,.txt,.md" 
                       onChange={handleFileUpload} 
                     />
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => fileInputRef.current?.click()}
                       disabled={isUploadingDocument || !selectedConversationId}
+                      aria-label="Attach a file"
                       className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
                     >
                       {isUploadingDocument ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
                     </button>
-                    <button type="button" className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors">
+                    <button type="button" aria-label="Voice input (coming soon)" className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors">
                       <Mic className="w-4 h-4" />
                     </button>
                     <div className="ml-2">
                       <ModelSelector 
                         disabled={loading} 
-                        onModelChange={(p, m, mode) => {
+                        onModelChange={(_p, _m, _mode) => {
                           // Handled via aiStore internally
-                        }} 
+                        }}
                       />
                     </div>
                   </div>
-                  <button 
-                    type="submit" 
-                    disabled={!input.trim() || loading}
-                    className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-md hover:bg-primary-container transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
-                  >
-                    <ArrowUp className="w-5 h-5" />
-                  </button>
+                  {isGenerating ? (
+                    <button
+                      type="button"
+                      onClick={() => abortControllerRef.current?.abort()}
+                      title="Stop generating"
+                      aria-label="Stop generating"
+                      className="w-10 h-10 rounded-xl bg-error text-on-error flex items-center justify-center shadow-md hover:bg-error/90 transition-all hover:scale-105 active:scale-95"
+                    >
+                      <Square className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      type="submit"
+                      disabled={!input.trim() || loading}
+                      aria-label="Send message"
+                      className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-md hover:bg-primary-container transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+                    >
+                      <ArrowUp className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
           </div>
         </main>
+
+        {/* Visually hidden live region: announces completed AI responses to
+            screen readers without disturbing the layout. */}
+        <div role="status" aria-live="polite" className="sr-only">
+          {liveAnnouncement}
+        </div>
 
         {/* Right: Context Panel */}
         <aside className="w-72 flex-shrink-0 flex flex-col gap-4 overflow-y-auto no-scrollbar">
@@ -733,6 +775,7 @@ export default function AIChat() {
 
         </aside>
       </div>
+      <RoutingTable open={routingOpen} onClose={() => setRoutingOpen(false)} />
     </div>
   );
 }

@@ -3,12 +3,16 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import ResponseRenderer from '../ai-response/ResponseRenderer';
+import { parsePresentation } from '../ai-response/parsePresentation';
 
 interface AIResponseRendererProps {
   content: string;
+  /** True while the response is still streaming in; keeps the presentation skeleton until done. */
+  streaming?: boolean;
 }
 
-export default function AIResponseRenderer({ content }: AIResponseRendererProps) {
+export default function AIResponseRenderer({ content, streaming = false }: AIResponseRendererProps) {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const parsedContent = useMemo(() => {
@@ -80,6 +84,15 @@ export default function AIResponseRenderer({ content }: AIResponseRendererProps)
       setCurrentSlide(0);
     }
   }, [slides.length, currentSlide]);
+
+  // Structured presentation responses are handled by ResponseRenderer.
+  const presentation = useMemo(
+    () => parsePresentation(content, { isDone: !streaming }),
+    [content, streaming],
+  );
+  if (presentation.status !== 'none') {
+    return <ResponseRenderer content={content} streaming={streaming} />;
+  }
 
   if (slides.length <= 1) {
     return (
