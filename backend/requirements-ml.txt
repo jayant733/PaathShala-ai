@@ -1,0 +1,17 @@
+# Deep-learning frameworks for the adaptive ML engine.
+# NOTE: all imports of these packages in app code are LAZY (inside functions)
+# and gated by settings.ML_ENABLED / ML_DL_ENABLED, so the app still runs and
+# passes tests even if one of these cannot be installed on a given platform.
+#
+# For the CPU-only Docker image, install torch CPU FIRST (see Dockerfile):
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# then this file; pip will treat torch as already satisfied.
+#
+# tensorflow-cpu (not tensorflow) avoids pulling CUDA wheels on the slim image.
+
+torch>=2.2.0
+tensorflow-cpu>=2.16.0
+jax>=0.4.25
+jaxlib>=0.4.25
+transformers>=4.40.0
+protobuf>=3.20.3,<6
