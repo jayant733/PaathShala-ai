@@ -89,10 +89,19 @@ async def get_conversation_context(
         
     # Fetch recent topics and memories
     memory_repo = MemoryRepository(db)
-    
+
     # We fetch the latest learning events to use as topics
     learning_events = await memory_repo.get_learning_events(current_user.id, limit=5)
     topics = list(set([event.topic for event in learning_events]))
+
+    # Surface topics due for spaced repetition (adaptive ML) as sidebar chips
+    try:
+        from app.repositories.ml_repository import MLRepository
+        from app.services.ml import ReviewScheduler
+        due = await ReviewScheduler(MLRepository(db)).get_due_reviews(current_user.id)
+        topics.extend([f"due: {d['topic']}" for d in due[:5]])
+    except Exception:
+        pass  # ML disabled / tables missing -> no due chips
     
     # Fetch recent user memories SCOPED TO THIS CONVERSATION
     user_memories = await memory_repo.get_conversation_memories(conversation_id, limit=20)

@@ -8,17 +8,30 @@ from app.ai.agents.tools import AgentTools
 from app.database.models.chat import Conversation, Message
 from app.services.memory_service import MemoryService
 from app.repositories.memory_repository import MemoryRepository
+from app.services.ml import ReviewScheduler
 from sqlalchemy.future import select
 import asyncio
 
 class AgentService:
-    def __init__(self, session: AsyncSession, ai_service: AIService, tools: AgentTools, memory_service: MemoryService, memory_repo: MemoryRepository):
+    def __init__(self, session: AsyncSession, ai_service: AIService, tools: AgentTools, memory_service: MemoryService, memory_repo: MemoryRepository, ml_repo=None):
         self.session = session
         self.ai_service = ai_service
         self.tools = tools
         self.memory_service = memory_service
         self.memory_repo = memory_repo
+        self.ml_repo = ml_repo  # optional MLRepository -> due-review context for the tutor
         self.graph = create_agent_graph(ai_service, tools)
+
+    async def _due_review_topics(self, user_id: UUID) -> list[str]:
+        """Topics due for spaced repetition (empty when ML is not configured)."""
+        if not self.ml_repo:
+            return []
+        try:
+            scheduler = ReviewScheduler(self.ml_repo)
+            due = await scheduler.get_due_reviews(user_id)
+            return [f"Due for review: {d['topic']} ({d['reason']})" for d in due[:5]]
+        except Exception:
+            return []
 
     async def chat(self, user_id: UUID, message: str, conversation_id: Optional[UUID] = None) -> Dict[str, Any]:
         """
@@ -51,6 +64,11 @@ class AgentService:
         except Exception:
             memories = []
             history = []
+
+        # Augment learning history with topics due for spaced repetition so the
+        # tutor can proactively prompt "you're due to review X" (guarded).
+        for due_topic in await self._due_review_topics(user_id):
+            history.append({"topic": due_topic, "event": "review_needed"})
 
         initial_state = AgentState(
             user_id=user_id,

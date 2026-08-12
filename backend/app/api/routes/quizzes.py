@@ -1,4 +1,5 @@
 import json
+import logging
 from datetime import datetime, timezone
 from io import BytesIO
 from typing import Optional
@@ -9,10 +10,12 @@ from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import (
     get_current_user,
+    get_ml_engine,
     get_quiz_export_service,
     get_quiz_generator_service,
     get_quiz_repository,
 )
+from app.core.config import settings
 from app.database.models.quiz import Quiz
 from app.database.models.user import User
 from app.repositories.quiz_repository import QuizRepository
@@ -29,6 +32,9 @@ from app.schemas.quiz import (
 )
 from app.services.quiz_export_service import QuizExportService
 from app.services.quiz_generator_service import QuizGeneratorService, grade_attempt
+from app.services.ml import KnowledgeMasteryEngine
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/quizzes", tags=["quizzes"])
 
@@ -316,6 +322,7 @@ async def submit_attempt(
     attempt_id: UUID,
     current_user: User = Depends(get_current_user),
     repo: QuizRepository = Depends(get_quiz_repository),
+    ml_engine: KnowledgeMasteryEngine = Depends(get_ml_engine),
 ):
     quiz = await repo.get_quiz(quiz_id, with_questions=True)
     attempt = await repo.get_attempt(attempt_id, current_user.id)
@@ -332,6 +339,17 @@ async def submit_attempt(
         "skipped_count": grading["skipped_count"],
         "submitted_at": datetime.now(timezone.utc),
     })
+
+    # Adaptive-ML hook: feed this graded attempt into the mastery engine.
+    # Guarded + non-fatal — an ML failure must never break a quiz submission.
+    if settings.ML_ENABLED:
+        try:
+            await ml_engine.update_from_submit(
+                current_user.id, list(quiz.questions), grading["question_results"]
+            )
+        except Exception:
+            logger.exception("update_from_submit failed for user %s", current_user.id)
+
     return QuizResultRead(
         attempt_id=attempt.id,
         quiz_id=quiz.id,

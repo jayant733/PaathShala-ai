@@ -1,4 +1,4 @@
-from typing import Generator
+from typing import Any, Generator, Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
@@ -19,8 +19,10 @@ from app.services.document_processor import DocumentProcessor
 from app.services.chunking_service import ChunkingService
 from app.services.agent_service import AgentService
 from app.services.memory_service import MemoryService
+from app.services.ml import KnowledgeMasteryEngine, LearningPathRecommender, ReviewScheduler
 from app.ai.agents.tools import AgentTools
 from app.repositories.ai_repository import AIRepository
+from app.repositories.ml_repository import MLRepository
 from app.repositories.quiz_repository import QuizRepository
 from app.repositories.vector_repository import VectorRepository
 from app.repositories.memory_repository import MemoryRepository
@@ -50,11 +52,24 @@ def get_ai_service(repository: AIRepository = Depends(get_ai_repository)) -> AIS
 def get_quiz_repository(session: AsyncSession = Depends(get_db)) -> QuizRepository:
     return QuizRepository(session)
 
+def get_ml_repository(session: AsyncSession = Depends(get_db)) -> MLRepository:
+    return MLRepository(session)
+
+def get_ml_engine(repo: MLRepository = Depends(get_ml_repository)) -> KnowledgeMasteryEngine:
+    return KnowledgeMasteryEngine(repo)
+
+def get_ml_scheduler(repo: MLRepository = Depends(get_ml_repository)) -> ReviewScheduler:
+    return ReviewScheduler(repo)
+
+def get_ml_recommender(repo: MLRepository = Depends(get_ml_repository)) -> LearningPathRecommender:
+    return LearningPathRecommender(repo)
+
 def get_quiz_generator_service(
     session: AsyncSession = Depends(get_db),
     ai_service: AIService = Depends(get_ai_service),
+    ml_engine: Optional[Any] = Depends(get_ml_engine),
 ) -> QuizGeneratorService:
-    return QuizGeneratorService(ai_service, QuizRepository(session))
+    return QuizGeneratorService(ai_service, QuizRepository(session), ml_engine=ml_engine)
 
 def get_quiz_export_service(session: AsyncSession = Depends(get_db)) -> QuizExportService:
     return QuizExportService(QuizRepository(session))
@@ -110,9 +125,10 @@ def get_agent_service(
     ai_service: AIService = Depends(get_ai_service),
     tools: AgentTools = Depends(get_agent_tools),
     memory_service: MemoryService = Depends(get_memory_service),
-    memory_repository: MemoryRepository = Depends(get_memory_repository)
+    memory_repository: MemoryRepository = Depends(get_memory_repository),
+    ml_repository: MLRepository = Depends(get_ml_repository)
 ) -> AgentService:
-    return AgentService(session, ai_service, tools, memory_service, memory_repository)
+    return AgentService(session, ai_service, tools, memory_service, memory_repository, ml_repo=ml_repository)
 
 async def get_current_user(
 

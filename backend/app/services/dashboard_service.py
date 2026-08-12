@@ -1,17 +1,20 @@
 import uuid
 from app.repositories.dashboard_repository import DashboardRepository
 from app.schemas.dashboard import (
-    DashboardResponse, GoalStatus, StreakStatus, LearningTime, 
+    DashboardResponse, GoalStatus, StreakStatus, LearningTime,
     ContinueLearning, Recommendation, RecentSession
 )
 
 from app.services.ai_service import AIService
+from app.services.ml import KnowledgeMasteryEngine
 from app.ai.agents.recommendation_agent import RecommendationAgent
 
 class DashboardService:
-    def __init__(self, repository: DashboardRepository, ai_service: AIService):
+    def __init__(self, repository: DashboardRepository, ai_service: AIService,
+                 ml_engine: KnowledgeMasteryEngine = None):
         self.repository = repository
         self.ai_service = ai_service
+        self.ml_engine = ml_engine
 
     async def get_dashboard(self, user_id: uuid.UUID) -> DashboardResponse:
         user, profile = await self.repository.get_user_dashboard_data(user_id)
@@ -45,8 +48,18 @@ class DashboardService:
         
         # Goal Status
         goal_title = profile.learning_goal if profile and profile.learning_goal else "AI Engineer"
-        # Progress is mocked for Phase 7.1, will be implemented in later phases
-        goal_progress = 65 
+        # Mastery progress is real when the adaptive ML engine is wired in
+        # (guarded — falls back to the old placeholder when ML is disabled).
+        mastery_rows = []
+        if self.ml_engine is not None:
+            try:
+                mastery_rows = await self.ml_engine.repo.list_topic_mastery(user_id)
+            except Exception:
+                mastery_rows = []
+        if mastery_rows:
+            goal_progress = int(round(sum(m.mastery or 0.0 for m in mastery_rows) / len(mastery_rows) * 100))
+        else:
+            goal_progress = 65  # placeholder (no ML data yet)
         
         recent_sessions = []
         for conv in recent_convs:
@@ -74,10 +87,16 @@ class DashboardService:
         conv_context = [c.title for c in recent_convs if c.title]
         raw_memories = await self.repository.get_top_memories(user_id)
         mem_context = [f"Knows: {m.content}" if m.memory_type == 'knowledge' else f"Needs: {m.content}" for m in raw_memories]
-        
+
+        # Mastery gaps (weak topics first) ground the AI recommendations in real data
+        mastery_context = [
+            f"{m.topic}: mastery {m.mastery:.0%}, confidence {m.confidence:.0%}"
+            for m in sorted(mastery_rows, key=lambda r: r.mastery or 0.0)[:6]
+        ] if mastery_rows else None
+
         # Invoke LLM
         try:
-            agent_output = await agent.generate_recommendations(conv_context, mem_context)
+            agent_output = await agent.generate_recommendations(conv_context, mem_context, mastery_context)
             continue_learning = ContinueLearning(
                 empty=False,
                 title=agent_output.continue_learning_title, 

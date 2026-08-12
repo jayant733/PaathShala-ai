@@ -10,3 +10,4 @@ from .activity import router as activity_router
 from .chat import router as chat_router
 from .ai_providers import router as ai_providers_router
 from .quizzes import router as quizzes_router
+from .ml import router as ml_router

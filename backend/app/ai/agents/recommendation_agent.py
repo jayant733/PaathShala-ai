@@ -14,21 +14,23 @@ class RecommendationAgent:
         self.ai_service = ai_service
 
     async def generate_recommendations(
-        self, 
-        recent_conversations: List[str], 
-        memories: List[str]
+        self,
+        recent_conversations: List[str],
+        memories: List[str],
+        mastery_context: List[str] = None
     ) -> RecommendationAgentOutput:
-        
+
         import time
         system_prompt = """
         You are an intelligent, highly creative learning recommendation agent for PaathShala AI.
         Your job is to generate personalized, randomized dashboard recommendations based on the user's history.
-        
+
         CRITICAL RULES:
         1. Recommendations MUST be strictly about academic, scientific, technical, or general knowledge studying (e.g., Physics, History, Programming, Biology).
         2. DO NOT recommend meta-platform features like "Explore Platform" or "How to use PaathShala". Ignore any history related to this.
         3. Be highly creative and varied. NEVER give the exact same recommendations twice.
         4. If the user has no history or only meta-history, invent completely random, fascinating academic topics (e.g., "Quantum Mechanics", "Roman Empire", "Introduction to Python").
+        5. When Mastery Gaps are present, ground at least one recommendation in a real gap (weak topic -> specific sub-topic to strengthen it).
 
         You MUST respond with a JSON object in this exact format:
         {
@@ -40,8 +42,15 @@ class RecommendationAgent:
             "continue_learning_title": "Title here",
             "continue_learning_progress": 25
         }
-        Generate exactly 3 recommendations. 
+        Generate exactly 3 recommendations.
         Do not include markdown blocks or any other text.
+        """
+
+        mastery_block = ""
+        if mastery_context:
+            mastery_block = f"""
+        Mastery Gaps (weak topics ranked first):
+        {chr(10).join(mastery_context)}
         """
 
         prompt = f"""
@@ -50,7 +59,7 @@ class RecommendationAgent:
 
         User Memories (Strengths and Weaknesses):
         {chr(10).join(memories) if memories else "No specific memory nodes yet."}
-        
+        {mastery_block}
         Random Seed to ensure variety: {time.time()}
         """
         

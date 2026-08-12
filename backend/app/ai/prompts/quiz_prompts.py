@@ -79,8 +79,14 @@ def build_quiz_generation_prompt(
     question_count: Optional[int] = None,
     difficulty: Optional[str] = None,
     subject: Optional[str] = None,
+    mastery_context: Optional[str] = None,
 ) -> str:
-    """Assemble the user prompt for generating a quiz from a free-form topic prompt."""
+    """Assemble the user prompt for generating a quiz from a free-form topic prompt.
+
+    ``mastery_context`` is an optional, human-readable block describing the
+    learner's weak topics / calibrated difficulty (from the adaptive ML engine).
+    When present, the generator focuses questions where the learner struggles.
+    """
     count = _clamp_count(question_count)
     guide = TEMPLATE_GUIDES.get(template, TEMPLATE_GUIDES["intermediate"])
     diff = difficulty or ("medium" if template in ("intermediate", "concept") else
@@ -93,6 +99,12 @@ def build_quiz_generation_prompt(
     ]
     if subject:
         parts.append(f"Subject: {subject}.")
+    if mastery_context:
+        parts.append(
+            "ADAPTIVE LEARNING CONTEXT (prioritize these weak areas and weight difficulty "
+            "toward where this learner struggles):\n"
+            f"{mastery_context}"
+        )
     parts.append(
         f"Topic / what to cover:\n{topic_prompt}\n\n"
         "Generate the quiz JSON now — valid JSON only."

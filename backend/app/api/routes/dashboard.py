@@ -1,20 +1,22 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.api.dependencies import get_db, get_current_user, get_ai_service
+from app.api.dependencies import get_db, get_current_user, get_ai_service, get_ml_engine
 from app.database.models.user import User
 from app.repositories.dashboard_repository import DashboardRepository
 from app.services.dashboard_service import DashboardService
 from app.schemas.dashboard import DashboardResponse
 from app.services.ai_service import AIService
+from app.services.ml import KnowledgeMasteryEngine
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 def get_dashboard_service(
-    db: Session = Depends(get_db), 
-    ai_service: AIService = Depends(get_ai_service)
+    db: Session = Depends(get_db),
+    ai_service: AIService = Depends(get_ai_service),
+    ml_engine: KnowledgeMasteryEngine = Depends(get_ml_engine)
 ) -> DashboardService:
     repository = DashboardRepository(db)
-    return DashboardService(repository, ai_service)
+    return DashboardService(repository, ai_service, ml_engine=ml_engine)
 
 @router.get("", response_model=DashboardResponse)
 async def get_dashboard_data(

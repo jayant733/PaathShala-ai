@@ -104,15 +104,40 @@ def _normalize(value: Any) -> str:
 class QuizGeneratorService:
     MAX_REPAIR_ROUNDS = 2
 
-    def __init__(self, ai_service, repository: QuizRepository):
+    def __init__(self, ai_service, repository: QuizRepository, ml_engine=None):
         self.ai_service = ai_service
         self.repository = repository
+        self.ml_engine = ml_engine  # optional KnowledgeMasteryEngine (adaptive context)
+
+    async def _build_mastery_context(self, user_id: UUID) -> Optional[str]:
+        """Weak-topic / difficulty context for adaptive generation (None when ML off)."""
+        if not self.ml_engine:
+            return None
+        try:
+            rows = await self.ml_engine.repo.list_topic_mastery(user_id)
+            weak = [
+                m for m in rows
+                if (m.mastery or 0.5) < 0.5 or (m.confidence or 0.0) < 0.4
+            ]
+            weak.sort(key=lambda m: (m.mastery or 0.5))
+            if not weak:
+                return None
+            lines = [f"- {m.topic}: mastery {m.mastery:.0%}, confidence {m.confidence:.0%}"
+                     for m in weak[:6]]
+            return "Weak topics:\n" + "\n".join(lines) + (
+                "\nWeight a majority of questions toward these topics; make ~60% of them "
+                "hard if mastery is low — that is where this learner struggles."
+            )
+        except Exception:
+            return None
 
     async def generate_from_prompt(self, user_id: UUID, req: QuizGenerateRequest):
         if req.provider:
             set_ai_context(provider=req.provider, model_name=req.model_name)
+        mastery_context = await self._build_mastery_context(user_id)
         prompt = build_quiz_generation_prompt(
-            req.prompt, req.template, req.question_count, req.difficulty, req.subject
+            req.prompt, req.template, req.question_count, req.difficulty, req.subject,
+            mastery_context=mastery_context,
         )
         draft = await self._generate(user_id, prompt)
         return await self._validate_repair_persist(
