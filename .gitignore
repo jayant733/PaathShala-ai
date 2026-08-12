@@ -12,3 +12,11 @@ dist/
 build/
 .DS_Store
 *.log
+# ML model artifacts
+backend/models/
+*.db
+automation/backups/
+automation/audit_logs/
+automation/health/
+backend/app/automation/
+backend/docs/incidents/
