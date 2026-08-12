@@ -10,8 +10,9 @@ import VirtualizedMessageList from '../components/chat/VirtualizedMessageList';
 import { parsePresentation } from '../components/ai-response/parsePresentation';
 import { useAIStore } from '../store/aiStore';
 import { useLearningStore } from '../store/learningStore';
-import { Brain, FileText, Tag, Cpu, RefreshCw, Paperclip, Mic, ArrowUp, Loader2, Square } from 'lucide-react';
+import { Brain, FileText, Tag, Cpu, RefreshCw, Paperclip, Mic, ArrowUp, Loader2, Square, AlarmClock } from 'lucide-react';
 import { documentApi } from '../api/document.api';
+import { mlApi, type ReviewDue } from '../api/ml.api';
 import api from '../api/axios';
 
 export default function AIChat() {
@@ -25,7 +26,9 @@ export default function AIChat() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [routingOpen, setRoutingOpen] = useState(false);
-  
+  // Due-for-review topics from the spaced-repetition scheduler — hidden when ML is off.
+  const [dueReviews, setDueReviews] = useState<ReviewDue[]>([]);
+
   const currentProvider = useAIStore(state => state.provider);
   const currentModel = useAIStore(state => state.model);
 
@@ -47,6 +50,14 @@ export default function AIChat() {
       if (parsed.status === 'parsed') recordLearning(parsed.presentation);
     });
   }, [messages, recordLearning]);
+
+  // Spaced-repetition due reviews — best-effort; empty when the ML engine is off.
+  useEffect(() => {
+    mlApi
+      .getDueReviews()
+      .then(setDueReviews)
+      .catch(() => setDueReviews([]));
+  }, []);
 
   const focusComposer = useCallback(() => {
     composerRef.current?.focus();
@@ -751,6 +762,32 @@ export default function AIChat() {
               </div>
             )}
           </div>
+
+          {/* Due for review */}
+          {dueReviews.length > 0 && (
+            <div className="bg-surface-container-low rounded-xl p-5 shadow-sm border border-surface-container-highest/20">
+              <h3 className="font-title-sm text-title-sm text-on-surface flex items-center gap-2 mb-4">
+                <AlarmClock className="w-4 h-4 text-error" /> Due for review
+              </h3>
+              <div className="space-y-2">
+                {dueReviews.slice(0, 5).map((review) => (
+                  <button
+                    key={review.topic}
+                    onClick={() => handleSend(undefined, `Let me review ${review.topic} — ${review.reason}`)}
+                    className="w-full text-left p-3 bg-error/5 hover:bg-error/10 border border-error/15 rounded-lg transition-colors group"
+                  >
+                    <p className="font-label-md text-label-md text-on-surface flex items-center justify-between gap-2">
+                      <span className="truncate">{review.topic}</span>
+                      <span className="material-symbols-outlined text-[16px] text-error group-hover:-translate-x-0.5 transition-transform">arrow_forward</span>
+                    </p>
+                    <p className="font-label-sm text-label-sm text-error mt-0.5">
+                      {review.interval_days === 1 ? 'Review today' : `Review in ${review.interval_days}d`}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* AI Memory */}
           <div className="bg-surface-container-low rounded-xl p-5 shadow-sm border border-surface-container-highest/20 flex-1">

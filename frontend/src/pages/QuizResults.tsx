@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import clsx from 'clsx';
 import ScoreDonut from '../components/quiz/ScoreDonut';
 import { quizApi, type QuizResult } from '../api/quiz.api';
+import { mlApi, type MasterySummary } from '../api/ml.api';
 
 const PASS_PCT = 60;
 
@@ -21,6 +22,7 @@ export default function QuizResults() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [open, setOpen] = useState<number | null>(0);
+  const [mastery, setMastery] = useState<MasterySummary | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -42,6 +44,14 @@ export default function QuizResults() {
     };
     void load();
   }, [quizId, attemptId]);
+
+  // Adaptive-ML mastery panel — best-effort; hidden when the ML engine is off.
+  useEffect(() => {
+    mlApi
+      .getMastery()
+      .then(setMastery)
+      .catch(() => setMastery(null));
+  }, []);
 
   if (loading) {
     return (
@@ -119,6 +129,57 @@ export default function QuizResults() {
                   {t.topic}
                   <span className="text-on-surface-variant">· {t.wrong_count}/{t.total_count} wrong</span>
                 </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Adaptive-ML: per-topic mastery */}
+        {mastery && mastery.topics.length > 0 && (
+          <div className="mt-stack-lg">
+            <div className="mb-4 flex items-end justify-between">
+              <div>
+                <h2 className="text-headline-md font-headline-md text-on-surface">Your mastery</h2>
+                <p className="mt-1 text-body-md text-on-surface-variant">
+                  Adaptive model of how well you know each topic (Elo knowledge tracing).
+                </p>
+              </div>
+              <span className="text-label-sm font-medium text-on-surface-variant">
+                {mastery.strong_count} strong · {mastery.improving_count} improving · {mastery.weak_count} weak
+              </span>
+            </div>
+            <div className="grid gap-3">
+              {mastery.topics.slice(0, 8).map((t) => (
+                <div key={t.topic} className="rounded-2xl border border-outline-variant/20 bg-surface-container-low/60 px-5 py-4">
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <span className="text-body-md font-medium text-on-surface">{t.topic}</span>
+                    <span
+                      className={clsx(
+                        'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-label-sm',
+                        t.status === 'strong' && 'bg-primary/15 text-primary',
+                        t.status === 'improving' && 'bg-tertiary/15 text-tertiary',
+                        t.status === 'weak' && 'bg-error/15 text-error'
+                      )}
+                    >
+                      {t.status}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-outline-variant/20">
+                    <div
+                      className={clsx(
+                        'h-full rounded-full transition-all duration-500',
+                        t.status === 'strong' && 'bg-primary',
+                        t.status === 'improving' && 'bg-tertiary',
+                        t.status === 'weak' && 'bg-error'
+                      )}
+                      style={{ width: `${Math.round(t.mastery * 100)}%` }}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex items-center justify-between text-label-sm text-on-surface-variant">
+                    <span>{Math.round(t.mastery * 100)}% mastery · {t.attempts} attempts</span>
+                    <span>confidence {Math.round(t.confidence * 100)}%</span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

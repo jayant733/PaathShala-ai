@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { DashboardService } from '../api/dashboard.service';
 import type { Recommendation, LearningStatistics } from '../api/dashboard.service';
+import { mlApi, type LearningPathResponse } from '../api/ml.api';
 import type { ConversationItem } from '../api/chat.api';
 import { HistoryItem } from '../components/HistoryItem';
 
@@ -28,6 +29,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<LearningStatistics>({ totalMessages: 0 });
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [refreshingRecs, setRefreshingRecs] = useState(false);
+  const [learningPath, setLearningPath] = useState<LearningPathResponse | null>(null);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -80,6 +82,14 @@ export default function Dashboard() {
     }
   }, [token, pinnedId]);
 
+  useEffect(() => {
+    // Adaptive-ML learning path — best-effort; hidden when ML is disabled.
+    mlApi
+      .getLearningPath()
+      .then(setLearningPath)
+      .catch(() => setLearningPath(null));
+  }, []);
+
   const handleRefreshRecommendations = async () => {
     setRefreshingRecs(true);
     try {
@@ -131,7 +141,54 @@ export default function Dashboard() {
           </>
         )}
       </div>
-      
+
+      {/* Adaptive-ML Learning Path */}
+      {!isNewUser && learningPath && learningPath.items.length > 0 && (
+        <div className="bg-surface-container rounded-xl p-gutter shadow-sm">
+          <div className="flex items-end justify-between mb-stack-md">
+            <div>
+              <h3 className="font-title-lg text-title-lg text-on-surface">Learning Path</h3>
+              <p className="font-body-sm text-body-sm text-on-surface-variant">
+                Ranked by your weakest, most-tested topics — foundation before advanced.
+              </p>
+            </div>
+            <span className="font-label-sm text-label-sm text-on-surface-variant">
+              {learningPath.items.filter(i => i.status === 'weak').length} weak ·{' '}
+              {learningPath.items.filter(i => i.status === 'improving').length} improving ·{' '}
+              {learningPath.items.filter(i => i.status === 'strong').length} strong
+            </span>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {learningPath.items.slice(0, 6).map((item) => (
+              <div key={item.topic} className="rounded-lg bg-surface-container-high/60 border border-outline-variant/20 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <h4 className="font-title-sm text-title-sm text-on-surface">{item.topic}</h4>
+                  <span
+                    className={
+                      item.status === 'strong'
+                        ? 'font-label-sm text-label-sm text-primary'
+                        : item.status === 'improving'
+                          ? 'font-label-sm text-label-sm text-tertiary'
+                          : 'font-label-sm text-label-sm text-error'
+                    }
+                  >
+                    {item.status} · {Math.round(item.mastery * 100)}%
+                  </span>
+                </div>
+                <p className="font-body-sm text-body-sm text-on-surface-variant mt-1">{item.suggested_action}</p>
+                <button
+                  onClick={() => navigate(`/ai-tutor?initial_prompt=${encodeURIComponent(`Help me start learning ${item.topic}`)}`)}
+                  className="mt-3 inline-flex items-center gap-1 bg-primary/10 text-primary px-4 py-1.5 rounded-full font-label-sm hover:bg-primary/20 transition-colors cursor-pointer"
+                >
+                  Start Learning
+                  <span className="material-symbols-outlined text-[16px]">arrow_forward</span>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-12 gap-gutter">
         {/* Progress / Current Focus Card */}
         <div className="col-span-12 lg:col-span-8 bg-surface-container rounded-xl p-gutter shadow-sm relative overflow-hidden group">

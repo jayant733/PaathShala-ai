@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import clsx from 'clsx';
 import QuestionEditor from '../components/quiz/QuestionEditor';
 import ExportMenu from '../components/quiz/ExportMenu';
-import { quizApi, type Quiz, type QuestionDraft, type Difficulty } from '../api/quiz.api';
+import { quizApi, type Quiz, type QuestionDraft, type Difficulty, downloadBlob } from '../api/quiz.api';
 import { useQuizStore } from '../store/quizStore';
 
 const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard'];
@@ -37,7 +37,7 @@ function blankQuestion(): QuestionDraft {
 export default function QuizEdit() {
   const { quizId } = useParams<{ quizId: string }>();
   const navigate = useNavigate();
-  const { updateQuiz, publishQuiz, regenerateQuiz } = useQuizStore();
+  const { updateQuiz, regenerateQuiz } = useQuizStore();
 
   const [quiz, setQuiz] = useState<Quiz | null>(null);
   const [title, setTitle] = useState('');
@@ -102,10 +102,14 @@ export default function QuizEdit() {
     try {
       const payload = { title: title.trim(), description, subject, difficulty, duration_minutes: duration, questions };
       if (publish) {
-        await updateQuiz(quizId, payload);
-        const published = await publishQuiz(quizId);
-        setQuiz(published);
-        setNotice('Quiz published — it’s now available to take.');
+        const updated = await updateQuiz(quizId, payload);
+        setQuiz(updated);
+        
+        const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'quiz';
+        const blob = await quizApi.exportAppsScript(quizId);
+        downloadBlob(blob, `${slug}.gs`);
+        
+        setNotice('Draft saved and Google Apps Script downloaded. Paste this script into Google Apps Script to create your Google Form.');
       } else {
         const updated = await updateQuiz(quizId, payload);
         setQuiz(updated);
@@ -190,8 +194,8 @@ export default function QuizEdit() {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-label-md font-label-md text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-              Publish
+              <span className="material-symbols-outlined text-[18px]">integration_instructions</span>
+              Export to Google Forms
             </button>
           </div>
         </div>
@@ -314,8 +318,8 @@ export default function QuizEdit() {
             disabled={saving}
             className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-label-md font-label-md text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[18px]">rocket_launch</span>
-            Publish
+            <span className="material-symbols-outlined text-[18px]">integration_instructions</span>
+            Export to Google Forms
           </button>
         </div>
       </div>
