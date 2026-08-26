@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     MAX_CONVERSATIONS_PER_USER: int = 2
     # Maximum quizzes a user can generate.
     MAX_QUIZZES_PER_USER: int = 2
+    # Maximum characters per message/prompt (~500 words at avg 6 chars/word).
+    MAX_MESSAGE_LENGTH: int = 3000
     
     DEFAULT_AI_PROVIDER: str = "gemini"
     OLLAMA_BASE_URL: str = "http://localhost:11434"

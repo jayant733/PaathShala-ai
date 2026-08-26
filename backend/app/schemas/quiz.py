@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import Literal, Optional, Union, Any
 from uuid import UUID
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+from app.core.config import settings
 
 QuestionType = Literal["MCQ", "multiple", "true_false", "short_answer"]
 Difficulty = Literal["easy", "medium", "hard"]
@@ -94,13 +95,30 @@ class QuizDraft(BaseModel):
 # Requests
 # --------------------------------------------------------------------------
 class QuizGenerateRequest(BaseModel):
-    prompt: str
+    prompt: str = Field(
+        ...,
+        max_length=3000,
+        description="Quiz topic/prompt (max ~500 words / 3000 characters)"
+    )
     template: QuizTemplate = "intermediate"
     question_count: Optional[int] = Field(default=None, ge=1, le=50)
     difficulty: Optional[Difficulty] = None
     subject: Optional[str] = None
     provider: Optional[str] = Field(default=None, description="AI provider, e.g. 'gemini' or 'ollama'")
     model_name: Optional[str] = None
+
+    @field_validator("prompt")
+    @classmethod
+    def prompt_not_empty(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("Prompt cannot be empty.")
+        word_count = len(v.split())
+        if len(v) > settings.MAX_MESSAGE_LENGTH:
+            raise ValueError(
+                f"Prompt is too long ({word_count} words). "
+                f"Please keep it under ~500 words ({settings.MAX_MESSAGE_LENGTH} characters)."
+            )
+        return v.strip()
 
 
 class QuizGenerateFromHistoryRequest(BaseModel):
