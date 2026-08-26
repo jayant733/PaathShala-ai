@@ -25,7 +25,7 @@ class ProviderManager(LLMProvider):
                 return await self.ollama.generate_response(prompt, system_instruction)
             except Exception as fallback_err:
                 logger.error(f"Auto Mode: Fallback (Ollama) also failed: {str(fallback_err)}")
-                raise fallback_err
+                raise AIBadRequestException(f"Both AI providers failed. Gemini Error: {str(e)} | Ollama Error: {str(fallback_err)}")
 
     async def _execute_auto_stream(self, prompt: str, system_instruction: Optional[str] = None, history: list = None):
         """Auto mode tries Gemini first, then falls back to Ollama."""
@@ -50,7 +50,7 @@ class ProviderManager(LLMProvider):
                     yield chunk
             except Exception as fallback_err:
                 logger.error(f"Auto Mode: Fallback (Ollama) stream also failed: {str(fallback_err)}")
-                raise fallback_err
+                raise AIBadRequestException(f"Both AI providers failed. Gemini Error: {str(e)} | Ollama Error: {str(fallback_err)}")
 
     async def _execute_manual(self, provider_name: str, prompt: str, system_instruction: Optional[str] = None) -> Dict[str, Any]:
         """Manual mode strictly forces the chosen provider without fallback."""

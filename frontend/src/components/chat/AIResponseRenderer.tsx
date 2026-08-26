@@ -36,46 +36,7 @@ export default function AIResponseRenderer({ content, streaming = false }: AIRes
   }, [content]);
 
   const slides = useMemo(() => {
-    const text = parsedContent.text;
-    // If the content is short, just render it as one slide
-    if (text.length < 500) {
-      return [text];
-    }
-
-    // Split by horizontal rules
-    const hrSplit = text.split(/\n---\n|\n___\n|\n\*\*\*\n/);
-    if (hrSplit.length > 1) {
-      return hrSplit.map(s => s.trim()).filter(Boolean);
-    }
-
-    // Fallback: Split by H1 or H2 if there are multiple
-    // We use a regex lookahead to keep the heading with the content
-    const headingSplit = text.split(/(?=\n##? )/);
-    if (headingSplit.length > 2) {
-      return headingSplit.map(s => s.trim()).filter(Boolean);
-    }
-
-    // Fallback: chunk by double newlines if extremely long (e.g. 1500 chars)
-    if (text.length > 1500) {
-      const chunks = text.split(/\n\n/);
-      const combinedChunks: string[] = [];
-      let currentChunk = '';
-      
-      chunks.forEach(chunk => {
-        if ((currentChunk + '\n\n' + chunk).length > 800) {
-          if (currentChunk) combinedChunks.push(currentChunk.trim());
-          currentChunk = chunk;
-        } else {
-          currentChunk = currentChunk ? currentChunk + '\n\n' + chunk : chunk;
-        }
-      });
-      if (currentChunk) combinedChunks.push(currentChunk.trim());
-      
-      if (combinedChunks.length > 1) return combinedChunks;
-    }
-
-    // Default to a single slide
-    return [text];
+    return [parsedContent.text];
   }, [parsedContent.text]);
 
   // Ensure currentSlide is valid if content changes

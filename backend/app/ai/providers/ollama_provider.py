@@ -35,7 +35,7 @@ class OllamaProvider(LLMProvider):
             if system_instruction:
                 payload["system"] = system_instruction
                 
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=180.0) as client:
                 response = await client.post(
                     f"{self.base_url}/api/generate",
                     json=payload
@@ -75,7 +75,7 @@ class OllamaProvider(LLMProvider):
                 payload = {"model": model_to_use, "messages": messages, "stream": True}
                 endpoint = f"{self.base_url}/api/chat"
                 
-                async with httpx.AsyncClient(timeout=60.0) as client:
+                async with httpx.AsyncClient(timeout=180.0) as client:
                     async with client.stream("POST", endpoint, json=payload) as response:
                         response.raise_for_status()
                         async for line in response.aiter_lines():
@@ -99,7 +99,7 @@ class OllamaProvider(LLMProvider):
                 if system_instruction:
                     payload["system"] = system_instruction
                     
-                async with httpx.AsyncClient(timeout=60.0) as client:
+                async with httpx.AsyncClient(timeout=180.0) as client:
                     async with client.stream("POST", f"{self.base_url}/api/generate", json=payload) as response:
                         response.raise_for_status()
                         async for line in response.aiter_lines():

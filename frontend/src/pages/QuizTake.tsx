@@ -144,6 +144,9 @@ export default function QuizTake() {
       dirtyRef.current = false;
       await saveNow();
       const result = await quizApi.submitAttempt(quizId!, id);
+      window.dispatchEvent(new CustomEvent('quizCompleted', {
+        detail: { quizId, attemptId: result.attempt_id }
+      }));
       resetAttempt();
       navigate(`/quizzes/${quizId}/results/${result.attempt_id}`, { replace: true });
     } catch (e) {

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
-from app.api.dependencies import get_current_user, get_agent_service, get_ai_service
+from app.api.dependencies import get_current_user, get_agent_service, get_ai_service, check_conversation_limit, get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.ai_service import AIService
 from app.database.models.user import User
 from app.services.agent_service import AgentService
@@ -28,7 +29,8 @@ async def _resolve_auto_target(db, user_id, message):
 async def chat_with_agent(
     request: AgentChatRequest,
     current_user: User = Depends(get_current_user),
-    agent_service: AgentService = Depends(get_agent_service)
+    agent_service: AgentService = Depends(get_agent_service),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Chat with the PaathShala AI agent ecosystem.
@@ -36,6 +38,11 @@ async def chat_with_agent(
     try:
         import logging
         logger = logging.getLogger(__name__)
+
+        # Block new conversation creation if user has hit the limit
+        if not request.conversation_id:
+            await check_conversation_limit(current_user, db)
+
         logger.info(f"[Agent Route] Received chat request: mode={request.ai_mode}, provider={request.provider}, model={request.model_name}")
 
         # Set contextvar for the current async task
@@ -68,7 +75,8 @@ async def stream_chat_with_agent(
     current_user: User = Depends(get_current_user),
     ai_service: AIService = Depends(get_ai_service),
     agent_service: AgentService = Depends(get_agent_service),
-    rag_service: RAGService = Depends(get_rag_service)
+    rag_service: RAGService = Depends(get_rag_service),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Stream chat with the AI tutor (bypasses full LangGraph for Phase 2).
@@ -79,16 +87,20 @@ async def stream_chat_with_agent(
     
     logger.info(f"[Agent Route] Received stream request: mode={request.ai_mode}, provider={request.provider}, model={request.model_name}")
 
+    # Block new conversation creation if user has hit the limit
+    if not request.conversation_id:
+        await check_conversation_limit(current_user, db)
+
     # Set contextvar for the current async task
     mode = request.ai_mode or ("auto" if not request.provider else "manual")
     provider = request.provider
     model_name = request.model_name
 
+
     if mode == "auto":
         provider, model_name, mode = await _resolve_auto_target(
             agent_service.session, current_user.id, request.message
         )
-
     set_ai_context(provider=provider, model_name=model_name, mode=mode)
 
     async def event_generator():
@@ -106,8 +118,16 @@ async def stream_chat_with_agent(
                 if not conv:
                     yield f"data: {json.dumps({'error': 'Invalid conversation_id', 'done': True})}\n\n"
                     return
+                # If topic was not extracted before, try to extract it from history or title
+                if not conv.topic and conv.title.startswith("Help me start learning "):
+                    conv.topic = conv.title.replace("Help me start learning ", "").strip()
+                    await agent_service.session.commit()
             else:
-                conv = Conversation(user_id=current_user.id, title=request.message[:50])
+                title = request.message[:50]
+                topic = None
+                if request.message.startswith("Help me start learning "):
+                    topic = request.message.replace("Help me start learning ", "").strip()
+                conv = Conversation(user_id=current_user.id, title=title, topic=topic)
                 agent_service.session.add(conv)
                 await agent_service.session.commit()
                 await agent_service.session.refresh(conv)
@@ -121,6 +141,9 @@ async def stream_chat_with_agent(
             
             logger.info(f"[Agent Route] Incoming user message for conv {conversation_id}: {request.message[:100]}...")
             
+            # Store topic to avoid lazy-loading issues after session.commit()
+            topic_to_update = conv.topic
+
             # Process RAG if document is linked
             system_prompt = get_presentation_system_prompt()
             
@@ -153,6 +176,34 @@ async def stream_chat_with_agent(
                     err_str = traceback.format_exc()
                     logger.error(f"RAG Retrieval failed: {err_str}")
                     system_prompt += f"\n\nDEBUG ERROR IN RAG:\n{err_str}"
+                    
+            # Mastery Injection
+            if conv.topic:
+                # We need ml_repo directly or instantiate engine
+                try:
+                    from app.services.ml.mastery import KnowledgeMasteryEngine, _normalize_topic
+                    from app.repositories.ml_repository import MLRepository
+                    
+                    # Assuming we can instantiate it or have it injected
+                    ml_repo = MLRepository(agent_service.session)
+                    engine = KnowledgeMasteryEngine(ml_repo)
+                    
+                    topic_norm = _normalize_topic(conv.topic)
+                    mastery_map = await ml_repo.get_topic_mastery_map(current_user.id, [topic_norm])
+                    m_row = mastery_map.get(topic_norm)
+                    if m_row:
+                        mastery_pct = m_row.mastery
+                        logger.info(f"Topic {conv.topic} mastery is {mastery_pct}")
+                        
+                        system_prompt += f"\n\n[SYSTEM DIRECTIVE: MASTERY ADAPTATION]\nThe student is asking about '{conv.topic}'."
+                        if mastery_pct < 0.40:
+                            system_prompt += " They are a BEGINNER (mastery < 40%). You MUST use simple language, analogies, step-by-step breakdowns, and avoid complex jargon."
+                        elif mastery_pct < 0.60:
+                            system_prompt += " They are at an INTERMEDIATE level (mastery 40-60%). Focus on core features, practical implementations, and best practices."
+                        else:
+                            system_prompt += " They are ADVANCED (mastery > 60%). Provide deep dives, edge cases, under-the-hood mechanisms, and complex scenarios."
+                except Exception as e:
+                    logger.error(f"Failed to inject mastery: {e}")
             
             # Load conversation history for multi-turn context
             history_stmt = select(Message).where(
@@ -196,6 +247,24 @@ async def stream_chat_with_agent(
             agent_service.session.add(assistant_msg)
             await agent_service.session.commit()
             
+            # Asynchronously update mastery if topic exists
+            if topic_to_update:
+                try:
+                    from app.services.ml.mastery import KnowledgeMasteryEngine, _normalize_topic
+                    from app.repositories.ml_repository import MLRepository
+                    import asyncio
+                    
+                    # actually we shouldn't pass the same session to a fire-and-forget inside the generator 
+                    # but since we are yielding, let's just await it directly here (it's fast enough)
+                    ml_repo = MLRepository(agent_service.session)
+                    engine = KnowledgeMasteryEngine(ml_repo)
+                    
+                    topic_norm = _normalize_topic(topic_to_update)
+                    await engine.update_from_chat_interaction(current_user.id, topic_norm)
+                    logger.info(f"Successfully bumped mastery for {topic_norm}")
+                except Exception as e:
+                    logger.error(f"Failed to update mastery from chat: {e}")
+
             logger.info(f"[Agent Route] Received full response from model '{final_model}' ({len(full_response)} chars).")
                 
         except Exception as e:

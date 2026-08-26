@@ -42,6 +42,24 @@ class LearningPathItem(BaseModel):
     next_topics: list[str] = []
 
 
+class QuizMasterySummary(BaseModel):
+    quiz_id: UUID
+    quiz_title: str
+    mastery: float
+    status: MasteryStatus
+    topic_count: int
+
+
+class LearningPathQuizzesResponse(BaseModel):
+    items: list[QuizMasterySummary]
+
+
+class QuizMasteryDetailed(BaseModel):
+    quiz_id: UUID
+    quiz_title: str
+    topics: list[LearningPathItem]
+
+
 class LearningPathResponse(BaseModel):
     items: list[LearningPathItem]
     ordered_topics: list[str]
@@ -60,6 +78,10 @@ class ReviewDue(BaseModel):
 class ReviewCompleteRequest(BaseModel):
     topic: str
     outcome: ReviewOutcome
+
+
+class StudyCompleteRequest(BaseModel):
+    topic: str
 
 
 class ReviewCompleteResponse(BaseModel):

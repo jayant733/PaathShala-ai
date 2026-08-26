@@ -167,3 +167,53 @@ async def get_current_user(
         raise HTTPException(status_code=400, detail="Inactive user")
         
     return user
+
+
+async def check_conversation_limit(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Block new conversation creation when user has reached their limit.
+
+    Existing conversations are always allowed (user can keep chatting in them).
+    Only *new* conversation creation is gated.
+    """
+    from sqlalchemy import func
+    from app.database.models.chat import Conversation
+
+    count_stmt = select(func.count()).select_from(Conversation).where(
+        Conversation.user_id == current_user.id
+    )
+    result = await db.execute(count_stmt)
+    conv_count = result.scalar() or 0
+
+    if conv_count >= settings.MAX_CONVERSATIONS_PER_USER:
+        raise HTTPException(
+            status_code=429,
+            detail=f"You have reached the maximum of {settings.MAX_CONVERSATIONS_PER_USER} conversations. "
+                   f"Please continue in an existing conversation or delete one to start a new chat."
+        )
+    return current_user
+
+
+async def check_quiz_limit(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Block quiz generation when user has reached their limit."""
+    from sqlalchemy import func
+    from app.database.models.quiz import Quiz
+
+    count_stmt = select(func.count()).select_from(Quiz).where(
+        Quiz.created_by == current_user.id
+    )
+    result = await db.execute(count_stmt)
+    quiz_count = result.scalar() or 0
+
+    if quiz_count >= settings.MAX_QUIZZES_PER_USER:
+        raise HTTPException(
+            status_code=429,
+            detail=f"You have reached the maximum of {settings.MAX_QUIZZES_PER_USER} quizzes. "
+                   f"Please delete an existing quiz to generate a new one."
+        )
+    return current_user

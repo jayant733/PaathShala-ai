@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Union, Any
 from uuid import UUID
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 QuestionType = Literal["MCQ", "multiple", "true_false", "short_answer"]
 Difficulty = Literal["easy", "medium", "hard"]
@@ -17,11 +17,55 @@ class QuestionDraft(BaseModel):
     question_text: str
     question_type: QuestionType = "MCQ"
     options: list[str] = []
-    correct_answers: list[str]
+    correct_answers: list[str] = []
     explanation: str = ""
     difficulty: Difficulty = "medium"
     topic: str = "General"
     points: int = 1
+
+    @field_validator("question_type", mode="before")
+    @classmethod
+    def normalize_question_type(cls, v: Any) -> str:
+        if not isinstance(v, str):
+            return "MCQ"
+        s = v.strip().lower().replace("-", "_").replace(" ", "_")
+        if s in ("mcq", "multiple_choice", "single_choice", "singlechoice"):
+            return "MCQ"
+        if s in ("multiple", "multi_select", "checkbox", "multiple_select", "multiselect"):
+            return "multiple"
+        if s in ("true_false", "truefalse", "boolean", "tf", "true/false"):
+            return "true_false"
+        if s in ("short_answer", "shortanswer", "text", "open_ended", "short"):
+            return "short_answer"
+        return "MCQ"
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def normalize_difficulty(cls, v: Any) -> str:
+        if not isinstance(v, str):
+            return "medium"
+        s = v.strip().lower()
+        if s in ("easy", "beginner"):
+            return "easy"
+        if s in ("hard", "advanced", "expert"):
+            return "hard"
+        return "medium"
+
+    @field_validator("correct_answers", mode="before")
+    @classmethod
+    def normalize_correct_answers(cls, v: Any) -> list[str]:
+        if isinstance(v, str):
+            return [v]
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        return []
+
+    @field_validator("options", mode="before")
+    @classmethod
+    def normalize_options(cls, v: Any) -> list[str]:
+        if isinstance(v, list):
+            return [str(x) for x in v]
+        return []
 
 
 class QuizDraft(BaseModel):
@@ -32,6 +76,18 @@ class QuizDraft(BaseModel):
     duration_minutes: int = 10
     number_of_questions: int = 5
     questions: list[QuestionDraft]
+
+    @field_validator("difficulty", mode="before")
+    @classmethod
+    def normalize_difficulty(cls, v: Any) -> str:
+        if not isinstance(v, str):
+            return "medium"
+        s = v.strip().lower()
+        if s in ("easy", "beginner"):
+            return "easy"
+        if s in ("hard", "advanced", "expert"):
+            return "hard"
+        return "medium"
 
 
 # --------------------------------------------------------------------------
@@ -96,6 +152,15 @@ class QuestionTakeRead(BaseModel):
     order_index: int
 
 
+class LastAttemptSummary(BaseModel):
+    attempt_id: UUID
+    status: str
+    score: Optional[float] = None
+    total_points: int
+    percent: Optional[float] = None
+    submitted_at: Optional[datetime] = None
+
+
 class QuizRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -112,6 +177,7 @@ class QuizRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     questions: list[QuestionRead] = []
+    last_attempt: Optional[LastAttemptSummary] = None
 
 
 class QuizListResponse(BaseModel):

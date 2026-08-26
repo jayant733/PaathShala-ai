@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import HistorySourceRow from '../components/quiz/HistorySourceRow';
 import { useQuizStore } from '../store/quizStore';
+import { useAIStore } from '../store/aiStore';
 import type { QuizSourceItem, QuizTemplate, Difficulty } from '../api/quiz.api';
 
 const TEMPLATES: { value: QuizTemplate; label: string; desc: string }[] = [
@@ -25,6 +26,7 @@ const STEP_LABELS = ['Generating', 'Validating', 'Repairing', 'Saving'];
 export default function QuizCreate() {
   const navigate = useNavigate();
   const { generateQuiz, generateFromHistory, fetchSources, sources } = useQuizStore();
+  const { mode, provider, model } = useAIStore();
 
   const [tab, setTab] = useState<'prompt' | 'history'>('prompt');
   const [prompt, setPrompt] = useState('');
@@ -49,10 +51,11 @@ export default function QuizCreate() {
     try {
       const quiz = await fn();
       setStep(4);
-      setTimeout(() => navigate(`/quizzes/${quiz.id}/edit`), 400);
-    } catch (e) {
+      setTimeout(() => navigate(`/quizzes/${quiz.id}/take`), 400);
+    } catch (e: any) {
       setStep(-1);
-      setError((e as Error).message || 'Generation failed');
+      const apiError = e.response?.data?.detail;
+      setError(apiError || e.message || 'Generation failed');
     }
   };
 
@@ -64,6 +67,8 @@ export default function QuizCreate() {
         template,
         question_count: questionCount,
         difficulty: difficulty || undefined,
+        provider: mode === 'auto' ? undefined : provider,
+        model_name: mode === 'auto' ? undefined : model,
       })
     );
   };
@@ -77,6 +82,7 @@ export default function QuizCreate() {
         template,
         question_count: questionCount,
         difficulty: difficulty || undefined,
+        // Optional because API might not support it, but if it does, it'll use it
       })
     );
   };
@@ -84,213 +90,209 @@ export default function QuizCreate() {
   const busy = step >= 0;
 
   return (
-    <div className="flex min-h-screen w-full flex-col px-margin-mobile py-stack-lg md:px-margin-desktop">
-      <div className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col">
-        <button onClick={() => navigate('/quizzes')} className="mb-4 inline-flex w-fit items-center gap-1.5 text-label-md font-label-md text-on-surface-variant hover:text-on-surface">
-          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+    <div className="flex flex-col w-full">
+      <div className="max-w-[1000px] w-full mx-auto px-spacing-gutter py-12">
+        
+        {/* Breadcrumb / Back link */}
+        <button onClick={() => navigate('/quizzes')} className="inline-flex items-center gap-2 font-button-text text-on-surface-variant hover:text-on-surface transition-colors mb-8 w-fit group">
+          <span className="material-symbols-outlined text-[20px] transition-transform group-hover:-translate-x-1">arrow_back</span>
           Back to quizzes
         </button>
 
-        <h1 className="text-headline-lg font-headline-lg text-on-surface">Create a quiz</h1>
-        <p className="mt-1 text-body-md text-on-surface-variant">
-          Describe what to test, or pick a past conversation to turn into a quiz.
-        </p>
-
-        {/* Tabs */}
-        <div className="mt-stack-lg flex gap-2 rounded-2xl border border-outline-variant/20 bg-surface-container-high/70 p-1.5">
-          {(['prompt', 'history'] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setError(null); }}
-              className={clsx(
-                'flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-label-md font-label-md transition-colors',
-                tab === t ? 'bg-primary text-on-primary' : 'text-on-surface-variant hover:text-on-surface'
-              )}
-            >
-              <span className="material-symbols-outlined text-[18px]">{t === 'prompt' ? 'edit_note' : 'history'}</span>
-              {t === 'prompt' ? 'AI prompt' : 'From history'}
-            </button>
-          ))}
+        {/* Header Section */}
+        <div className="mb-10">
+          <h2 className="font-display-lg-mobile lg:font-display-lg text-primary mb-4 tracking-tight">Create a quiz</h2>
+          <p className="font-body-lg text-on-surface-variant max-w-2xl">
+            Describe what to test, or pick a past conversation to turn into a quiz.
+          </p>
         </div>
 
-        {/* Generation progress stepper */}
-        {busy && (
-          <div className="mt-stack-md flex flex-col items-center gap-4 rounded-2xl border border-primary/20 bg-primary/5 px-6 py-8 text-center">
-            <div className="relative h-10 w-10">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary/25 border-t-primary" />
+        {/* Generation progress stepper (Quiz Generation Page) */}
+        {busy ? (
+          <div className="bg-surface border-4 border-surface-border p-12 shadow-[12px_12px_0_0_#111827] flex flex-col items-center justify-center text-center relative overflow-hidden min-h-[400px]">
+            {/* Decorative background grid */}
+            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            
+            <div className="relative h-24 w-24 mb-10 z-10">
+              <div className="absolute inset-0 border-4 border-surface-border bg-mint-accent shadow-[4px_4px_0_0_#111827] animate-[spin_3s_linear_infinite]" />
+              <div className="absolute inset-2 border-4 border-surface-border bg-secondary animate-[spin_2s_linear_infinite_reverse]" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="material-symbols-outlined text-[32px] text-on-surface z-20 animate-pulse">auto_awesome</span>
+              </div>
             </div>
-            <div>
-              <p className="text-headline-md font-headline-md text-on-surface">
+
+            <div className="relative z-10">
+              <span className="bg-ink-black text-on-primary px-4 py-1 font-label-caps uppercase tracking-widest text-[12px] mb-4 inline-block border-2 border-surface-border shadow-[2px_2px_0_0_#003527]">
+                Step {Math.min(step + 1, STEP_LABELS.length)} of {STEP_LABELS.length}
+              </span>
+              <h3 className="font-display-lg text-[48px] font-black text-ink-black uppercase mb-4 leading-none tracking-tight">
                 {step < 4 ? STEP_LABELS[Math.min(step, STEP_LABELS.length - 1)] : 'Done'}
-              </p>
-              <p className="mt-1 text-body-sm text-on-surface-variant">
-                {step < 4 ? 'Crafting your quiz with AI…' : 'Opening the editor…'}
+              </h3>
+              <p className="font-body-lg text-on-surface-variant max-w-md mx-auto bg-surface-container p-4 border-l-4 border-primary">
+                {step < 4 ? 'Our AI engine is currently crafting your quiz. This process involves analyzing context, generating questions, and validating difficulty.' : 'Generation complete! Opening the quiz editor...'}
               </p>
             </div>
-            <div className="flex items-center gap-2">
-              {STEP_LABELS.map((label, i) => (
-                <div key={label} className="flex items-center gap-2">
-                  <span
-                    className={clsx(
-                      'rounded-full px-3 py-1 text-label-xs font-label-xs uppercase tracking-wide transition-colors',
-                      step > i ? 'bg-primary text-on-primary' : step === i ? 'bg-primary/15 text-primary' : 'bg-surface-container-high text-on-surface-variant/60'
-                    )}
-                  >
+
+            <div className="w-full max-w-2xl mt-12 relative z-10">
+              <div className="flex justify-between mb-2">
+                {STEP_LABELS.map((label, i) => (
+                  <span key={label} className={clsx("font-label-caps text-[10px] uppercase tracking-widest transition-colors", step >= i ? 'text-primary font-bold' : 'text-on-surface-variant opacity-50')}>
                     {label}
                   </span>
-                  {i < STEP_LABELS.length - 1 && <span className="h-px w-4 bg-outline-variant/40" />}
+                ))}
+              </div>
+              <div className="h-4 w-full bg-surface-container border-2 border-surface-border rounded-none relative overflow-hidden">
+                <div 
+                  className="absolute top-0 left-0 h-full bg-secondary transition-all duration-500 ease-out border-r-2 border-surface-border"
+                  style={{ width: `${Math.max(5, (step / (STEP_LABELS.length - 1)) * 100)}%` }}
+                >
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, #000 10px, #000 20px)' }}></div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        )}
+        ) : (
+          <>
+            {/* Error */}
+            {error && (
+              <div className="mb-6 p-4 bg-error text-on-error border-4 border-surface-border shadow-[4px_4px_0_0_#111827] font-body-lg font-bold">
+                Error: {error}
+              </div>
+            )}
 
-        {/* Error */}
-        {error && (
-          <div className="mt-stack-md rounded-xl border border-error/30 bg-error/10 px-4 py-3 text-body-sm text-error">
-            {error}
-          </div>
-        )}
+            {/* Tab Switcher */}
+            <div className="flex items-center gap-2 mb-6">
+              <button 
+                onClick={() => { setTab('prompt'); setError(null); }}
+                className={clsx("flex items-center gap-2 border-2 px-6 py-3 font-button-text transition-all", tab === 'prompt' ? "bg-primary text-on-primary border-surface-border shadow-[4px_4px_0px_0px_#111827]" : "bg-surface-container-high text-on-surface-variant border-transparent hover:border-surface-border hover:bg-surface-container-highest")}
+              >
+                <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+                AI prompt
+              </button>
+              <button 
+                onClick={() => { setTab('history'); setError(null); }}
+                className={clsx("flex items-center gap-2 border-2 px-6 py-3 font-button-text transition-all", tab === 'history' ? "bg-primary text-on-primary border-surface-border shadow-[4px_4px_0px_0px_#111827]" : "bg-surface-container-high text-on-surface-variant border-transparent hover:border-surface-border hover:bg-surface-container-highest")}
+              >
+                <span className="material-symbols-outlined text-[18px]">history</span>
+                From history
+              </button>
+            </div>
 
-        {!busy && (
-          <div className="mt-stack-md">
-            {tab === 'prompt' ? (
-              <div className="grid gap-5 rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-low/60 p-6">
-                <label className="block">
-                  <span className="field-label">Prompt</span>
-                  <textarea
+            {/* Main Configuration Card */}
+            <div className="bg-surface-container-lowest border-2 border-surface-border p-6 md:p-10 flex flex-col gap-10 relative">
+              
+              {tab === 'prompt' ? (
+                /* PROMPT Section */
+                <div>
+                  <label className="block font-label-caps text-on-surface-variant uppercase tracking-widest mb-4" htmlFor="quiz-prompt">Prompt</label>
+                  <textarea 
+                    id="quiz-prompt"
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    rows={5}
+                    className="w-full bg-surface border-2 border-surface-border p-5 min-h-[160px] font-body-md text-on-surface resize-y focus:shadow-[4px_4px_0px_0px_#111827] outline-none transition-all placeholder:text-on-surface-variant/50" 
                     placeholder="e.g. Create a 5-question medium Java Spring Boot quiz covering dependency injection and REST controllers"
-                    className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-high px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-y transition-colors"
-                  />
-                </label>
-
+                  ></textarea>
+                </div>
+              ) : (
+                /* HISTORY Section */
                 <div>
-                  <span className="field-label">Template</span>
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-                    {TEMPLATES.map((t) => (
-                      <button
-                        key={t.value}
+                  <label className="block font-label-caps text-on-surface-variant uppercase tracking-widest mb-4">Select Source</label>
+                  <div className="relative mb-4">
+                    <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">search</span>
+                    <input
+                      value={sourceSearch}
+                      onChange={(e) => setSourceSearch(e.target.value)}
+                      placeholder="Search your chats & AI interactions…"
+                      className="w-full bg-surface border-2 border-surface-border py-3 pl-12 pr-4 font-body-md focus:shadow-[4px_4px_0px_0px_#111827] outline-none transition-all placeholder:text-on-surface-variant/50"
+                    />
+                  </div>
+
+                  {sources.length === 0 ? (
+                    <div className="p-8 border-2 border-dashed border-surface-border text-center">
+                      <p className="font-body-md text-on-surface-variant">No past chats or AI interactions yet. Have a conversation in the AI Tutor or Agent Chat first.</p>
+                    </div>
+                  ) : (
+                    <div className="grid max-h-[300px] gap-2 overflow-y-auto pr-2 custom-scrollbar">
+                      {sources.map((item) => (
+                        <div key={`${item.source_type}-${item.id}`} className="border-2 border-surface-border">
+                          <HistorySourceRow
+                            item={item}
+                            selected={selectedSource?.id === item.id && selectedSource?.source_type === item.source_type}
+                            onSelect={(s) => setSelectedSource(s)}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TEMPLATE Section */}
+              <div>
+                <span className="block font-label-caps text-on-surface-variant uppercase tracking-widest mb-4">Template</span>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                  {TEMPLATES.map((t) => {
+                    const isActive = template === t.value;
+                    return (
+                      <div 
+                        key={t.value} 
                         onClick={() => setTemplate(t.value)}
-                        className={clsx(
-                          'rounded-xl border px-3 py-2.5 text-left transition-colors',
-                          template === t.value ? 'border-primary/70 bg-primary/10' : 'border-outline-variant/20 bg-surface-container-high/50 hover:border-primary/40'
-                        )}
+                        className={clsx("border-2 border-surface-border p-4 transition-all cursor-pointer", isActive ? "bg-mint-accent shadow-[4px_4px_0px_0px_#111827] relative overflow-hidden" : "bg-surface hover:shadow-[4px_4px_0px_0px_#111827] group")}
                       >
-                        <span className={clsx('block text-label-md font-label-md', template === t.value ? 'text-primary' : 'text-on-surface')}>{t.label}</span>
-                        <span className="mt-0.5 block text-label-xs text-on-surface-variant">{t.desc}</span>
-                      </button>
-                    ))}
+                        {isActive && <div className="absolute top-0 right-0 w-8 h-8 bg-surface-border transform translate-x-4 -translate-y-4 rotate-45"></div>}
+                        <div className="font-button-text text-on-surface mb-1">{t.label}</div>
+                        <div className={clsx("font-body-md text-sm", isActive ? "text-on-surface-variant" : "text-on-surface-variant group-hover:text-on-surface")}>{t.desc}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Settings Row (Difficulty & Questions) */}
+              <div className="flex flex-wrap items-end gap-8 border-t-2 border-surface-border pt-8">
+                <div>
+                  <label className="block font-label-caps text-on-surface-variant uppercase tracking-widest mb-3" htmlFor="difficulty-select">Difficulty</label>
+                  <div className="relative">
+                    <select 
+                      id="difficulty-select"
+                      value={difficulty}
+                      onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
+                      className="appearance-none bg-surface border-2 border-surface-border py-3 pl-4 pr-10 font-button-text text-on-surface w-48 focus:shadow-[4px_4px_0px_0px_#111827] outline-none transition-all cursor-pointer rounded-none"
+                    >
+                      <option value="">Auto</option>
+                      {DIFFICULTIES.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                    </select>
+                    <span className="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface">expand_more</span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 sm:max-w-md">
-                  <label className="block">
-                    <span className="field-label">Difficulty</span>
-                    <select
-                      value={difficulty}
-                      onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
-                      className="w-full cursor-pointer rounded-xl border border-outline-variant/30 bg-surface-container-high px-3 py-2.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    >
-                      <option value="">Auto</option>
-                      {DIFFICULTIES.map((d) => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="field-label">Questions</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={questionCount}
-                      onChange={(e) => setQuestionCount(Math.min(50, Math.max(1, Number(e.target.value) || 1)))}
-                      className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-high px-3 py-2.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    />
-                  </label>
+                <div>
+                  <label className="block font-label-caps text-on-surface-variant uppercase tracking-widest mb-3" htmlFor="questions-input">Questions</label>
+                  <input 
+                    id="questions-input"
+                    type="number" 
+                    min={1} max={50} 
+                    value={questionCount}
+                    onChange={(e) => setQuestionCount(Math.min(50, Math.max(1, Number(e.target.value) || 1)))}
+                    className="bg-surface border-2 border-surface-border py-3 px-4 font-button-text text-on-surface w-24 focus:shadow-[4px_4px_0px_0px_#111827] outline-none transition-all rounded-none" 
+                  />
                 </div>
+              </div>
 
-                <button
-                  onClick={handlePromptGenerate}
-                  disabled={!prompt.trim()}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-5 py-3 text-label-md font-label-md text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+              {/* Action Button */}
+              <div className="mt-4">
+                <button 
+                  onClick={tab === 'prompt' ? handlePromptGenerate : handleHistoryGenerate}
+                  disabled={tab === 'prompt' ? !prompt.trim() : !selectedSource}
+                  className="w-full bg-secondary text-on-secondary-container border-2 border-surface-border py-5 font-headline-lg flex items-center justify-center gap-3 hover:shadow-[6px_6px_0px_0px_#111827] hover:-translate-y-1 transition-all active:translate-y-0 active:shadow-[2px_2px_0px_0px_#111827] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none disabled:hover:translate-y-0"
                 >
-                  <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
+                  <span className="material-symbols-outlined text-[28px]">flare</span>
                   Generate quiz
                 </button>
               </div>
-            ) : (
-              <div className="grid gap-5 rounded-[1.75rem] border border-outline-variant/20 bg-surface-container-low/60 p-6">
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant">
-                    <span className="material-symbols-outlined text-[18px]">search</span>
-                  </span>
-                  <input
-                    value={sourceSearch}
-                    onChange={(e) => setSourceSearch(e.target.value)}
-                    placeholder="Search your chats & AI interactions…"
-                    className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-high px-4 py-3 pl-10 text-body-md text-on-surface placeholder:text-on-surface-variant/60 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-colors"
-                  />
-                </div>
 
-                {sources.length === 0 ? (
-                  <p className="py-10 text-center text-body-sm text-on-surface-variant">
-                    No past chats or AI interactions yet. Have a conversation in the AI Tutor or Agent Chat first.
-                  </p>
-                ) : (
-                  <div className="grid max-h-[420px] gap-2.5 overflow-y-auto pr-1">
-                    {sources.map((item) => (
-                      <HistorySourceRow
-                        key={`${item.source_type}-${item.id}`}
-                        item={item}
-                        selected={selectedSource?.id === item.id && selectedSource?.source_type === item.source_type}
-                        onSelect={(s) => setSelectedSource(s)}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4 sm:max-w-md">
-                  <label className="block">
-                    <span className="field-label">Difficulty</span>
-                    <select
-                      value={difficulty}
-                      onChange={(e) => setDifficulty(e.target.value as Difficulty | '')}
-                      className="w-full cursor-pointer rounded-xl border border-outline-variant/30 bg-surface-container-high px-3 py-2.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    >
-                      <option value="">Auto</option>
-                      {DIFFICULTIES.map((d) => (
-                        <option key={d.value} value={d.value}>{d.label}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="field-label">Questions</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={questionCount}
-                      onChange={(e) => setQuestionCount(Math.min(50, Math.max(1, Number(e.target.value) || 1)))}
-                      className="w-full rounded-xl border border-outline-variant/30 bg-surface-container-high px-3 py-2.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                    />
-                  </label>
-                </div>
-
-                <button
-                  onClick={handleHistoryGenerate}
-                  disabled={!selectedSource}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-primary px-5 py-3 text-label-md font-label-md text-on-primary transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <span className="material-symbols-outlined text-[18px]">auto_awesome</span>
-                  Generate from selection
-                </button>
-              </div>
-            )}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </div>

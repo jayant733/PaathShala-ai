@@ -38,7 +38,10 @@ export const agentApi = {
       });
       
       if (!response.ok) {
-        throw new Error('Failed to stream response');
+        const errBody = await response.text().catch(() => '');
+        let detail = `HTTP ${response.status}`;
+        try { detail = JSON.parse(errBody)?.detail || errBody || detail; } catch { detail = errBody || detail; }
+        throw new Error(`Failed to stream response: ${detail}`);
       }
       
       const reader = response.body?.getReader();

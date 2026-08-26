@@ -17,6 +17,7 @@ export interface ChatMessage {
   content: string;
   created_at: string;
   model?: string;
+  model_used?: string;
 }
 
 export interface ConversationMessagesResponse {

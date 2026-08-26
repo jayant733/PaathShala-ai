@@ -2,7 +2,6 @@ import { useEffect, useRef, useCallback } from 'react';
 import type { MutableRefObject } from 'react';
 import { Virtuoso } from 'react-virtuoso';
 import type { VirtuosoHandle } from 'react-virtuoso';
-import { Brain } from 'lucide-react';
 import type { ChatMessage } from '../../api/chat.api';
 import { MessageBubble } from './MessageBubble';
 import AIResponseRenderer from './AIResponseRenderer';
@@ -51,20 +50,25 @@ function StreamingRow({
   currentModel: string | null;
 }) {
   return (
-    <div className="flex justify-start max-w-5xl mx-auto w-full group">
-      <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center mr-4 mt-1 border border-primary/20">
-        <Brain className="w-4 h-4 text-primary animate-pulse" />
+    <div className="flex items-start gap-4 mb-8 justify-start max-w-5xl mx-auto w-full group">
+      <div className="w-10 h-10 rounded-full bg-primary border-2 border-surface-border flex items-center justify-center shrink-0">
+        <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
       </div>
-      <div className="flex-1 w-full max-w-[90%]">
-        <AIResponseRenderer content={content} streaming />
+      <div className="flex-1 max-w-3xl">
+        <div className="font-button-text text-on-surface mb-2 flex items-center gap-2">
+          PaathShala AI Tutor
+          <div className="flex gap-1">
+            <div className="w-1.5 h-1.5 bg-primary border border-surface-border rounded-full animate-bounce"></div>
+            <div className="w-1.5 h-1.5 bg-tertiary border border-surface-border rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+            <div className="w-1.5 h-1.5 bg-secondary border border-surface-border rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+          </div>
+        </div>
+        <div className="bg-surface-container font-body-md p-6 rounded-xl border-2 border-surface-border shadow-[4px_4px_0px_0px_#111827]">
+          <AIResponseRenderer content={content} streaming />
+        </div>
         <div className="flex items-center justify-between mt-2">
-          <div className="text-[10px] text-on-surface-variant font-mono bg-surface-container-highest px-2 py-0.5 rounded border border-outline-variant/10 flex items-center gap-2">
+          <div className="text-[10px] text-on-surface-variant font-label-caps uppercase tracking-wider bg-surface-container-highest px-2 py-0.5 rounded border-2 border-surface-border">
             {model || (provider === 'gemini' ? 'gemini' : currentModel)}
-            <div className="flex gap-1">
-              <div className="w-1 h-1 bg-primary rounded-full animate-bounce"></div>
-              <div className="w-1 h-1 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-              <div className="w-1 h-1 bg-secondary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
-            </div>
           </div>
         </div>
       </div>
@@ -170,17 +174,22 @@ export default function VirtualizedMessageList(props: VirtualizedMessageListProp
         if (item.type === 'thinking') {
           return (
             <div className={wrapperClass}>
-              <div className="flex justify-start max-w-5xl mx-auto w-full group">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex-shrink-0 flex items-center justify-center mr-4 mt-1 border border-primary/20">
-                  <Brain className="w-4 h-4 text-primary animate-pulse" />
+              <div className="flex items-start gap-4 mb-8 justify-start max-w-5xl mx-auto w-full group">
+                <div className="w-10 h-10 rounded-full bg-primary border-2 border-surface-border flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-on-primary animate-pulse" style={{ fontVariationSettings: "'FILL' 1" }}>smart_toy</span>
                 </div>
-                <div className="flex items-center gap-3 bg-surface-container-highest px-5 py-4 rounded-2xl rounded-tl-sm shadow-sm border border-outline-variant/10">
-                  <div className="flex gap-1.5">
-                    <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
-                    <div className="w-2 h-2 bg-secondary rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                <div className="flex-1 max-w-3xl">
+                  <div className="font-button-text text-on-surface mb-2">PaathShala AI Tutor</div>
+                  <div className="bg-surface-container font-body-md p-6 rounded-xl border-2 border-surface-border shadow-[4px_4px_0px_0px_#111827]">
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 bg-primary border border-surface-border rounded-full animate-bounce"></div>
+                        <div className="w-2.5 h-2.5 bg-tertiary border border-surface-border rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                        <div className="w-2.5 h-2.5 bg-secondary border border-surface-border rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
+                      </div>
+                      <span className="font-button-text text-on-surface-variant italic">Thinking...</span>
+                    </div>
                   </div>
-                  <span className="font-label-md text-label-md text-on-surface-variant italic">PaathShala AI is thinking...</span>
                 </div>
               </div>
             </div>

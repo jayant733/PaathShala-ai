@@ -42,6 +42,15 @@ export interface QuestionTake {
   order_index: number;
 }
 
+export interface LastAttemptSummary {
+  attempt_id: string;
+  status: string;
+  score: number | null;
+  total_points: number;
+  percent: number | null;
+  submitted_at: string | null;
+}
+
 export interface Quiz {
   id: string;
   title: string;
@@ -56,6 +65,7 @@ export interface Quiz {
   created_at: string;
   updated_at: string;
   questions: Question[];
+  last_attempt?: LastAttemptSummary | null;
 }
 
 export interface QuizAttempt {

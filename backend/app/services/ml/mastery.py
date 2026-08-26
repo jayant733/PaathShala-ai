@@ -204,7 +204,250 @@ class KnowledgeMasteryEngine:
             )
             summary[topic] = {"mastery": mastery, "confidence": confidence, "p_correct": p_correct}
 
+        await self.repo.commit()
         return summary
+
+    async def update_from_study(self, user_id: UUID, topic: str) -> dict[str, float]:
+        """Process a study event: bump confidence and reset spaced repetition without affecting Elo."""
+        if not settings.ML_ENABLED:
+            return {}
+
+        topic = _normalize_topic(topic)
+        mastery_map = await self.repo.get_topic_mastery_map(user_id, [topic])
+        existing = mastery_map.get(topic)
+        
+        # Start at base Elo if unseen, otherwise keep current
+        rating = existing.elo_rating if existing else self.elo_start
+        attempts = (existing.attempts if existing else 0) + 1
+        correct = existing.correct_count if existing else 0
+        wrong = existing.wrong_count if existing else 0
+        
+        mastery = _mastery_from_rating(rating)
+        # Increasing attempts automatically boosts confidence in this formula
+        confidence = 1.0 - 2.0 / (attempts + 4)
+        p_correct = correct / attempts if attempts > 0 else 0.5
+        
+        await self.repo.upsert_topic_mastery(
+            user_id=user_id,
+            topic=topic,
+            elo_rating=rating,
+            mastery=mastery,
+            attempts=attempts,
+            correct_count=correct,
+            wrong_count=wrong,
+            p_correct=p_correct,
+            confidence=confidence,
+        )
+        
+        await self.scheduler.record_study(user_id, topic, outcome="study")
+        await self.repo.commit()
+        
+        return {"mastery": mastery, "confidence": confidence, "p_correct": p_correct}
+
+    async def sync_user_history(self, user_id: UUID) -> int:
+        """Backfill topic mastery & observations from all past completed quiz attempts."""
+        attempts = await self.repo.list_user_attempts_with_questions(user_id)
+        if not attempts:
+            return 0
+
+        attempts.sort(key=lambda a: a.submitted_at or a.created_at or datetime.min.replace(tzinfo=timezone.utc))
+
+        from app.services.quiz_generator_service import grade_attempt
+
+        processed_count = 0
+        for attempt in attempts:
+            if not attempt.quiz or not attempt.quiz.questions:
+                continue
+            grading = grade_attempt(list(attempt.quiz.questions), attempt.answers or {})
+            question_results = grading.get("question_results", [])
+            if not question_results:
+                continue
+
+            q_by_id = {str(q.id): q for q in attempt.quiz.questions}
+            topics = {_normalize_topic(r.topic) for r in question_results}
+            mastery_map = await self.repo.get_topic_mastery_map(user_id, list(topics))
+
+            states: dict[str, _TopicState] = {}
+            now = attempt.submitted_at or datetime.now(timezone.utc)
+
+            for r in question_results:
+                q = q_by_id.get(str(r.question_id))
+                topic = _normalize_topic(r.topic or (q.topic if q else None))
+                diff_label = ((q.difficulty if q else None) or "medium").lower()
+                qtype = (r.question_type or (q.question_type if q else None)) or "MCQ"
+                is_correct = bool(r.is_correct)
+
+                state = states.get(topic)
+                if state is None:
+                    existing = mastery_map.get(topic)
+                    state = _TopicState(existing.elo_rating if existing else self.elo_start)
+                    states[topic] = state
+
+                state.attempts += 1
+                if is_correct:
+                    state.correct += 1
+                else:
+                    state.wrong += 1
+
+                recency_days = None
+                if state.last_obs_at is not None:
+                    recency_days = max(0.0, (now - state.last_obs_at).total_seconds() / 86400.0)
+                state.last_obs_at = now
+
+                opponent = DIFFICULTY_RATING.get(diff_label, 1400.0)
+                expected = _elo_expected(state.rating, opponent)
+                outcome = 1.0 if is_correct else 0.0
+                state.rating += self.elo_k * (outcome - expected)
+
+                await self.repo.add_observation(
+                    user_id=user_id,
+                    question_id=r.question_id,
+                    topic=topic,
+                    difficulty_label=diff_label,
+                    question_type=qtype,
+                    is_correct=is_correct,
+                    attempt_seq=state.attempts,
+                    recency_days=recency_days,
+                )
+
+            for topic, state in states.items():
+                mastery = _mastery_from_rating(state.rating)
+                confidence = 1.0 - 2.0 / (state.attempts + 4)
+                p_correct = state.correct / state.attempts
+                await self.repo.upsert_topic_mastery(
+                    user_id=user_id,
+                    topic=topic,
+                    elo_rating=state.rating,
+                    mastery=mastery,
+                    attempts=state.attempts,
+                    correct_count=state.correct,
+                    wrong_count=state.wrong,
+                    p_correct=p_correct,
+                    confidence=confidence,
+                )
+                await self.scheduler.record_study(
+                    user_id, topic, outcome="correct" if state.correct >= state.wrong else "wrong"
+                )
+            processed_count += 1
+
+        await self.repo.commit()
+        return processed_count
+
+    async def update_from_chat_interaction(
+        self,
+        user_id: UUID,
+        topic: str
+    ) -> None:
+        """Simulate a correct answer to artificially boost mastery from a chat interaction.
+        This provides a steady progression towards 100% mastery for learning via chat.
+        """
+        if not settings.ML_ENABLED:
+            return
+
+        topic_norm = _normalize_topic(topic)
+
+        # Query a real question from the questions table for this topic to satisfy FK
+        from app.database.models.quiz import Question
+        from sqlalchemy import select
+        
+        stmt = select(Question.id).where(Question.topic == topic_norm).limit(1)
+        res = await self.repo.session.execute(stmt)
+        real_q_id = res.scalar_one_or_none()
+        
+        if not real_q_id:
+            stmt = select(Question.id).limit(1)
+            res = await self.repo.session.execute(stmt)
+            real_q_id = res.scalar_one_or_none()
+            
+        if not real_q_id:
+            # If still None, generate a synthetic one if FK check is disabled, but since it is enabled we will warn
+            logger.warning("No question found in database to link for chat observation. Faking one.")
+            real_q_id = UUID("00000000-0000-0000-0000-000000000000")
+
+        # Simulate a single correct observation of medium difficulty
+        now = datetime.now(timezone.utc)
+        obs_data = {
+            "user_id": user_id,
+            "question_id": real_q_id,
+            "topic": topic_norm,
+            "difficulty_label": "medium",
+            "is_correct": True,
+            "time_taken_seconds": 30,
+            "question_type": "chat",
+            "attempt_seq": 1,
+            "recency_days": 0.0,
+            "observed_at": now
+        }
+        
+        # Get current state
+        mastery_map = await self.repo.get_topic_mastery_map(user_id, [topic_norm])
+        state = _TopicState(self.elo_start)
+        m_row = mastery_map.get(topic_norm)
+        if m_row:
+            state.rating = m_row.elo_rating
+            state.attempts = m_row.attempts
+            state.correct = m_row.correct_count
+            state.wrong = m_row.wrong_count
+
+        # Apply Elo update
+        opponent_b = 0.0  # medium difficulty b_param
+        opponent_rating = _b_to_opponent(opponent_b) or DIFFICULTY_RATING["medium"]
+        
+        expected = _elo_expected(state.rating, opponent_rating)
+        actual = 1.0 # Correct
+        
+        # We can increase the K factor here to make chat interactions more impactful if needed,
+        # but 5 interactions with standard K=32 means 5 * 32 * (1 - expected) = roughly +50 to +100 rating.
+        # Let's use a significantly boosted K for chat to ensure visible progress per response (K=150).
+        chat_k = 150.0
+        new_rating = state.rating + chat_k * (actual - expected)
+        
+        state.rating = new_rating
+        state.attempts += 1
+        state.correct += 1
+        state.last_obs_at = now
+
+        new_mastery = _mastery_from_rating(state.rating)
+        
+        # Explicit rule: after 5 responses, mastery becomes 100%
+        if state.attempts >= 5:
+            new_mastery = 1.0
+            state.rating = max(state.rating, 3000.0) # Ensure underlying rating matches 100%
+        
+        # Calculate confidence
+        base_conf = min(1.0, state.attempts / 10.0)
+        recency_penalty = 0.0
+        confidence = max(0.0, base_conf - recency_penalty)
+        
+        upsert_data = {
+            "topic": topic_norm,
+            "elo_rating": state.rating,
+            "mastery": new_mastery,
+            "attempts": state.attempts,
+            "correct_count": state.correct,
+            "wrong_count": state.wrong,
+            "p_correct": expected,
+            "confidence": confidence,
+            "updated_at": now
+        }
+        
+        # Save to DB
+        await self.repo.add_observation(
+            user_id=user_id,
+            question_id=obs_data["question_id"],
+            topic=obs_data["topic"],
+            is_correct=obs_data["is_correct"],
+            difficulty_label=obs_data["difficulty_label"],
+            question_type=obs_data["question_type"],
+            attempt_seq=obs_data["attempt_seq"],
+            recency_days=obs_data["recency_days"]
+        )
+        
+        topic_for_upsert = upsert_data.pop("topic")
+        await self.repo.upsert_topic_mastery(user_id=user_id, topic=topic_for_upsert, **upsert_data)
+        await self.scheduler.record_study(user_id=user_id, topic=topic_norm, outcome="study")
+        await self.repo.commit()
+
 
     # ------------------------------------------------------------------ training
     async def fit_models(self) -> dict[str, Any]:

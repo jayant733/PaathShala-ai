@@ -15,7 +15,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   Debugging: 'bg-orange-400',
 };
 
-const GOAL = 10; // nominal milestones for the journey progress bar
+const LEVEL_SIZE = 10;
+
+const getLevelInfo = (count: number) => {
+  const level = Math.floor(count / LEVEL_SIZE) + 1;
+  const progressInLevel = count % LEVEL_SIZE;
+  const pct = Math.round((progressInLevel / LEVEL_SIZE) * 100);
+  return { level, progress: progressInLevel, pct };
+};
 
 /** Sidebar card showing the learner's journey: progress %, completed lessons
  *  (by category) and the recommended next topic. */
@@ -27,7 +34,7 @@ export default function LearningProfile() {
 
   if (!current && completed.length === 0) return null;
 
-  const pct = Math.min(100, Math.round((completed.length / GOAL) * 100));
+  const { level, progress, pct } = getLevelInfo(completed.length);
   const next = current?.nextTopics?.[0] ?? recommendedNext;
 
   return (
@@ -39,7 +46,10 @@ export default function LearningProfile() {
         className="w-full flex items-center justify-between px-3 py-2.5 hover:bg-surface-container-high/40 transition-colors"
       >
         <span className="font-label-md text-label-md text-on-surface flex items-center gap-2">
-          <GraduationCap className="w-4 h-4 text-primary" /> Your Learning Journey
+          <GraduationCap className="w-4 h-4 text-primary" /> Learning Journey
+          <span className="px-1.5 py-0.5 ml-1 rounded-md bg-primary/10 text-primary text-[10px] uppercase font-bold tracking-wider">
+            Level {level}
+          </span>
         </span>
         <ChevronDown className={`w-4 h-4 text-on-surface-variant transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -50,7 +60,7 @@ export default function LearningProfile() {
           <div>
             <div className="flex items-center justify-between font-label-sm text-label-sm mb-1">
               <span className="text-on-surface-variant flex items-center gap-1.5">
-                <Target className="w-3.5 h-3.5 text-secondary" /> {completed.length} of {GOAL} lessons
+                <Target className="w-3.5 h-3.5 text-secondary" /> {progress} of {LEVEL_SIZE} to Level {level + 1}
               </span>
               <span className="text-primary font-semibold">{pct}%</span>
             </div>

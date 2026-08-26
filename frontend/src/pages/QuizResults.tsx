@@ -4,6 +4,7 @@ import clsx from 'clsx';
 import ScoreDonut from '../components/quiz/ScoreDonut';
 import { quizApi, type QuizResult } from '../api/quiz.api';
 import { mlApi, type MasterySummary } from '../api/ml.api';
+import ExportMenu from '../components/quiz/ExportMenu';
 
 const PASS_PCT = 60;
 
@@ -77,10 +78,13 @@ export default function QuizResults() {
   return (
     <div className="flex min-h-screen w-full flex-col px-margin-mobile py-stack-lg md:px-margin-desktop">
       <div className="relative mx-auto flex w-full max-w-4xl flex-1 flex-col">
-        <button onClick={() => navigate('/quizzes')} className="mb-4 inline-flex w-fit items-center gap-1.5 text-label-md font-label-md text-on-surface-variant hover:text-on-surface">
-          <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-          Back to quizzes
-        </button>
+        <div className="mb-4 flex items-center justify-between">
+          <button onClick={() => navigate('/quizzes')} className="inline-flex w-fit items-center gap-1.5 text-label-md font-label-md text-on-surface-variant hover:text-on-surface">
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            Back to quizzes
+          </button>
+          <ExportMenu quizId={quizId!} quizTitle={title} />
+        </div>
 
         {/* Score header */}
         <div className="flex flex-col items-center gap-6 rounded-[2rem] border border-outline-variant/20 bg-surface-container-low/60 px-6 py-10 text-center sm:flex-row sm:items-center sm:justify-center sm:gap-10 sm:text-left">

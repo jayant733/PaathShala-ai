@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import clsx from 'clsx';
 import QuestionEditor from '../components/quiz/QuestionEditor';
-import ExportMenu from '../components/quiz/ExportMenu';
 import { quizApi, type Quiz, type QuestionDraft, type Difficulty, downloadBlob } from '../api/quiz.api';
 import { useQuizStore } from '../store/quizStore';
 
@@ -180,22 +179,13 @@ export default function QuizEdit() {
             </span>
           </div>
           <div className="flex items-center gap-2.5">
-            <ExportMenu quizId={quiz.id} quizTitle={title} disabled={saving} />
             <button
               onClick={() => void save(false)}
               disabled={saving}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-outline-variant/30 bg-surface-container-high px-4 py-2.5 text-label-md font-label-md text-on-surface transition-colors hover:border-primary/50 disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-[18px]">save</span>
-              Save draft
-            </button>
-            <button
-              onClick={() => void save(true)}
-              disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2.5 text-label-md font-label-md text-on-primary transition-opacity hover:opacity-90 disabled:opacity-50"
             >
-              <span className="material-symbols-outlined text-[18px]">integration_instructions</span>
-              Export to Google Forms
+              <span className="material-symbols-outlined text-[18px]">save</span>
+              Save changes
             </button>
           </div>
         </div>

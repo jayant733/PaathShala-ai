@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import SocialCards, { type CardItem } from '../ui/card-fan-carousel';
@@ -23,6 +23,17 @@ type AnswerTileProps = {
   desc: string;
 };
 
+function PreviewFrame({ children }: { children: ReactNode }) { return <div className="rounded-xl border border-outline-variant/35 bg-surface-container-lowest/80 p-3 shadow-[0_12px_28px_-22px_rgba(11,79,61,0.4)]">{children}</div>; }
+function AnswerPreview({ type }: Pick<AnswerTileProps, 'type'>) {
+  if (type === 'architecture') return <PreviewFrame><div className="flex items-center justify-between gap-1.5 text-[9px] font-mono text-primary">{['Question', 'Route', 'Answer'].map((label, index) => <div key={label} className="contents"><span className="rounded-md bg-primary/10 px-2 py-1.5 text-center">{label}</span>{index < 2 && <span className="material-symbols-outlined text-[13px] text-tertiary">arrow_forward</span>}</div>)}</div><div className="mt-2 flex items-center gap-1.5"><span className="h-1.5 flex-1 rounded-full bg-primary/20" /><span className="h-1.5 w-2/5 rounded-full bg-tertiary/35" /><span className="h-1.5 w-1/5 rounded-full bg-secondary/40" /></div></PreviewFrame>;
+  if (type === 'concept') return <PreviewFrame><p className="text-[11px] font-semibold text-on-surface">Vector search, simply</p><p className="mt-1 text-[9px] leading-relaxed text-on-surface-variant">Finds ideas by meaning, not only the words they share.</p><div className="mt-3 flex gap-1.5"><span className="rounded-full bg-primary/10 px-2 py-1 text-[8px] font-medium text-primary">meaning</span><span className="rounded-full bg-tertiary-container px-2 py-1 text-[8px] font-medium text-on-tertiary-container">similarity</span></div></PreviewFrame>;
+  if (type === 'code') return <PreviewFrame><div className="flex items-center gap-1.5 border-b border-outline-variant/25 pb-2 text-[8px] font-mono text-on-surface-variant"><span className="h-2 w-2 rounded-full bg-secondary/60" /><span className="h-2 w-2 rounded-full bg-primary/50" /><span>route.ts</span></div><pre className="mt-2 overflow-hidden text-[8px] leading-[1.8] font-mono text-on-surface"><code><span className="text-tertiary">const</span> lesson = <span className="text-primary">await</span>{'\n'}  tutor.<span className="text-secondary">explain</span>(topic);</code></pre></PreviewFrame>;
+  if (type === 'comparison') return <PreviewFrame><div className="grid grid-cols-[1.1fr_1fr_1fr] gap-px overflow-hidden rounded-lg bg-outline-variant/30 text-[8px]">{['', 'React', 'Next.js', 'Routing', 'Client', 'File-based', 'Rendering', 'Client', 'Hybrid'].map((cell, index) => <span key={`${cell}-${index}`} className={`bg-surface-container-lowest px-1.5 py-1.5 ${index < 3 ? 'font-semibold text-primary' : 'text-on-surface-variant'}`}>{cell}</span>)}</div></PreviewFrame>;
+  if (type === 'learning') return <PreviewFrame><p className="text-[10px] font-semibold text-on-surface">Understand React state</p><div className="mt-2 space-y-2">{['See the mental model', 'Try a small example', 'Check your understanding'].map((step, index) => <div key={step} className="flex items-center gap-2 text-[8px] text-on-surface-variant"><span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[8px] font-bold text-primary">{index + 1}</span>{step}</div>)}</div></PreviewFrame>;
+  if (type === 'roadmap') return <PreviewFrame><div className="flex items-center justify-between text-[8px] font-medium"><span className="text-primary">Frontend foundations</span><span className="text-on-surface-variant">4 weeks</span></div><div className="mt-3 grid grid-cols-4 gap-1">{['HTML', 'CSS', 'React', 'Build'].map((week, index) => <div key={week} className="space-y-1"><span className={`block h-7 rounded-md ${index < 3 ? 'bg-primary/15' : 'bg-tertiary/20'}`} /><span className="block text-center text-[7px] text-on-surface-variant">{week}</span></div>)}</div></PreviewFrame>;
+  return <PreviewFrame><div className="flex items-center justify-between text-[9px] font-mono"><span className="text-error">TypeError</span><span className="text-on-surface-variant">line 24</span></div><div className="mt-2 rounded-lg bg-error/8 px-2 py-1.5 text-[8px] text-on-surface-variant">Cannot read properties of undefined</div><div className="mt-2 flex items-center gap-1.5 text-[8px] font-medium text-primary"><span className="material-symbols-outlined text-[12px]">check_circle</span> Trace the missing value</div></PreviewFrame>;
+}
+
 function AnswerTile({ icon, type, title, desc }: AnswerTileProps) {
   return (
     <div className="relative w-full h-full overflow-hidden bg-surface-container-low flex flex-col justify-between p-5 md:p-6">
@@ -36,7 +47,8 @@ function AnswerTile({ icon, type, title, desc }: AnswerTileProps) {
         <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-primary">{type}</span>
       </div>
 
-      <div className="relative">
+      <div className="relative mt-5 mb-auto"><AnswerPreview type={type} /></div>
+      <div className="relative mt-5">
         <h4 className="text-headline-md text-on-surface leading-snug">{title}</h4>
         <p className="text-label-sm text-on-surface-variant mt-2 leading-snug">{desc}</p>
       </div>

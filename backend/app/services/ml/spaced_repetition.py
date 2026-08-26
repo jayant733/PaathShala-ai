@@ -45,6 +45,11 @@ class ReviewScheduler:
         outcome: str,
     ) -> tuple[int, int, float]:
         """SM-2 transition. Returns (repetitions, interval_days, ease_factor)."""
+        if outcome == "study":
+            # Studying a topic is a soft review. We don't advance the multiplier
+            # but we ensure it's pushed out by at least the current interval (or 1 day min)
+            return repetitions, max(interval_days, _FIRST_INTERVAL_DAYS), ease_factor
+            
         if outcome != "correct":
             return 0, _FIRST_INTERVAL_DAYS, max(MIN_EASE_FACTOR, ease_factor - 0.2)
 

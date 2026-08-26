@@ -4,10 +4,21 @@
 /* ============================================================
    PaathShala AI — Material 3 (M3) Dark Design System
    Semantic tokens are defined in tailwind.config.js under
-   theme.extend.colors, which generates bg-*/text-*/border-*
+   theme.extend.colors, which generates semantic background, text and border
    utilities consumed across the app (Login, Dashboard, AI Chat,
    Quizzes, Landing).
    ============================================================ */
+
+@theme {
+  --color-secondary: #2dd4bf;
+  --color-secondary-fixed: #99f6e4;
+  --color-secondary-container: #ccfbf1;
+  --color-on-secondary-fixed-variant: #0f766e;
+  --color-on-secondary-fixed: #042f2e;
+  --color-on-secondary-container: #115e59;
+  --color-on-secondary: #042f2e;
+  --color-secondary-fixed-dim: #5eead4;
+}
 
 :root {
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -28,7 +39,17 @@ body {
   color: var(--color-on-surface);
   font-family: 'Inter', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   overscroll-behavior: none;
+  background-image: radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--color-primary-fixed) 22%, transparent), transparent 28rem), radial-gradient(circle at 100% 18%, color-mix(in srgb, var(--color-tertiary-fixed) 14%, transparent), transparent 32rem);
 }
+
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+input, select, textarea { font: inherit; }
+.app-surface { border: 1px solid color-mix(in srgb, var(--color-outline-variant) 46%, transparent); box-shadow: 0 14px 35px -28px rgba(20, 53, 40, 0.42), 0 1px 2px rgba(20, 53, 40, 0.05); }
+.app-surface-hover { transition: transform 220ms var(--ease-out-expo), box-shadow 220ms ease, border-color 220ms ease; }
+.app-surface-hover:hover { border-color: color-mix(in srgb, var(--color-primary) 27%, var(--color-outline-variant)); box-shadow: 0 20px 38px -26px rgba(14, 78, 60, 0.25), 0 1px 2px rgba(20, 53, 40, 0.06); transform: translateY(-2px); }
+.page-shell { background: linear-gradient(145deg, color-mix(in srgb, var(--color-surface) 92%, white) 0%, var(--color-surface) 54%, color-mix(in srgb, var(--color-primary-fixed) 11%, var(--color-surface)) 100%); }
 
 main > :first-child { margin-top: 0 !important; }
 main > :last-child { margin-bottom: 0 !important; }
@@ -75,7 +96,7 @@ main > :last-child { margin-bottom: 0 !important; }
   border: 1px solid color-mix(in srgb, var(--color-outline-variant) 35%, transparent);
   box-shadow:
     0 1px 0 0 color-mix(in srgb, #ffffff 8%, transparent) inset,
-    0 24px 60px -30px rgba(0, 25, 16, 0.45);
+    0 24px 60px -30px rgba(0, 64, 42, 0.24);
 }
 
 /* Glass for dark/translucent surfaces */
@@ -758,3 +779,5 @@ main > :last-child { margin-bottom: 0 !important; }
   0% { opacity: 0; transform: translateY(-5px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+

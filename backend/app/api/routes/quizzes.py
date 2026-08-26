@@ -10,16 +10,20 @@ from fastapi.responses import StreamingResponse
 
 from app.api.dependencies import (
     get_current_user,
+    get_db,
     get_ml_engine,
     get_quiz_export_service,
     get_quiz_generator_service,
     get_quiz_repository,
+    check_quiz_limit,
 )
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.database.models.quiz import Quiz
 from app.database.models.user import User
 from app.repositories.quiz_repository import QuizRepository
 from app.schemas.quiz import (
+    LastAttemptSummary,
     QuestionTakeRead,
     QuizAttemptRead,
     QuizAttemptUpdate,
@@ -69,7 +73,9 @@ async def generate_quiz(
     payload: QuizGenerateRequest,
     current_user: User = Depends(get_current_user),
     service: QuizGeneratorService = Depends(get_quiz_generator_service),
+    db: AsyncSession = Depends(get_db),
 ):
+    await check_quiz_limit(current_user, db)
     quiz = await service.generate_from_prompt(current_user.id, payload)
     return await _to_quiz_read(service.repository, quiz)
 
@@ -79,7 +85,9 @@ async def generate_quiz_from_history(
     payload: QuizGenerateFromHistoryRequest,
     current_user: User = Depends(get_current_user),
     service: QuizGeneratorService = Depends(get_quiz_generator_service),
+    db: AsyncSession = Depends(get_db),
 ):
+    await check_quiz_limit(current_user, db)
     quiz = await service.generate_from_history(current_user.id, payload)
     return await _to_quiz_read(service.repository, quiz)
 
@@ -114,10 +122,24 @@ async def list_quizzes(
     current_user: User = Depends(get_current_user),
     repo: QuizRepository = Depends(get_quiz_repository),
 ):
-    quizzes = await repo.list_quizzes(
+    pairs = await repo.list_quizzes_with_last_attempt(
         current_user.id, status=status, subject=subject, difficulty=difficulty, search=search
     )
-    return [QuizRead.model_validate(q) for q in quizzes]
+    results = []
+    for quiz, attempt in pairs:
+        quiz_read = QuizRead.model_validate(quiz)
+        if attempt:
+            pct = (attempt.score / attempt.total_points * 100) if (attempt.score is not None and attempt.total_points) else None
+            quiz_read.last_attempt = LastAttemptSummary(
+                attempt_id=attempt.id,
+                status=attempt.status,
+                score=attempt.score,
+                total_points=attempt.total_points,
+                percent=round(pct, 1) if pct is not None else None,
+                submitted_at=attempt.submitted_at,
+            )
+        results.append(quiz_read)
+    return results
 
 
 @router.post("", response_model=QuizRead, status_code=status.HTTP_201_CREATED)

@@ -6,34 +6,27 @@ interface DiagramRendererProps {
   label?: string;
 }
 
-let mermaidPromise: Promise<any> | null = null;
-let renderCounter = 0;
+import mermaid from 'mermaid';
 
-function loadMermaid() {
-  if (!mermaidPromise) {
-    mermaidPromise = import('mermaid').then((mod) => {
-      const mermaid = mod.default;
-      mermaid.initialize({
-        startOnLoad: false,
-        securityLevel: 'loose',
-        theme: 'dark',
-        themeVariables: {
-          primaryColor: '#1e2a45',
-          primaryTextColor: '#e8eefc',
-          primaryBorderColor: '#3b82f6',
-          lineColor: '#64748b',
-          secondaryColor: '#14202e',
-          tertiaryColor: '#0d141d',
-          fontSize: '14px',
-        },
-        flowchart: { curve: 'basis', htmlLabels: true },
-        er: { useMaxWidth: true },
-      });
-      return mermaid;
-    });
-  }
-  return mermaidPromise;
-}
+mermaid.initialize({
+  startOnLoad: false,
+  securityLevel: 'loose',
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#1e2a45',
+    primaryTextColor: '#e8eefc',
+    primaryBorderColor: '#3b82f6',
+    lineColor: '#64748b',
+    secondaryColor: '#14202e',
+    tertiaryColor: '#0d141d',
+    fontSize: '14px',
+  },
+  flowchart: { curve: 'basis', htmlLabels: true },
+  er: { useMaxWidth: true },
+});
+
+let renderCounter = 0;
+let renderLock: Promise<void> = Promise.resolve();
 
 function stripFence(source: string): string {
   const match = source.match(/^```(?:mermaid)?\s*([\s\S]*?)```$/);
@@ -109,18 +102,25 @@ export default function DiagramRenderer({ source, label }: DiagramRendererProps)
     }
 
     const id = stableId(code);
-    loadMermaid()
-      .then(async (mermaid) => {
-        const { svg } = await mermaid.render(id, code);
+    renderLock = renderLock
+      .then(async () => {
         if (cancelled || !el) return;
-        el.innerHTML = svg;
-        // Mermaid injects a temp <div id="d"> node we can remove.
-        document.getElementById(`dmermaid-${id}`)?.remove();
-        setSvgHtml(svg);
-        setState('done');
+        try {
+          // In Mermaid v11, parse may be async or throw synchronously
+          // Just use render which will throw if invalid.
+          const { svg } = await mermaid.render(id, code);
+          if (cancelled || !el) return;
+          el.innerHTML = svg;
+          document.getElementById(`dmermaid-${id}`)?.remove();
+          setSvgHtml(svg);
+          setState('done');
+        } catch (e) {
+          console.error('Mermaid render failed', e);
+          if (!cancelled) setState('error');
+        }
       })
       .catch((e) => {
-        console.error('Mermaid render failed', e);
+        console.error('Mermaid render queue failed', e);
         if (!cancelled) setState('error');
       });
 

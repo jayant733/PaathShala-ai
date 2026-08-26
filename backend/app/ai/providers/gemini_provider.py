@@ -70,6 +70,10 @@ class GeminiProvider(LLMProvider):
                     {"role": "model" if m["role"] == "assistant" else "user", "parts": [m["content"]]}
                     for m in history
                 ]
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.info(f"Gemini History: {gemini_history}")
+                logger.info(f"Gemini Prompt: {prompt}")
                 chat = model.start_chat(history=gemini_history)
                 response = await chat.send_message_async(prompt, stream=True)
             else:
@@ -95,9 +99,11 @@ class GeminiProvider(LLMProvider):
         except google_exceptions.ResourceExhausted:
             raise AIRateLimitException()
         except google_exceptions.InvalidArgument as e:
-            raise AIBadRequestException(str(e))
+            history_str = str(gemini_history) if 'gemini_history' in locals() else 'None'
+            raise AIBadRequestException(f"InvalidArgument: {str(e)} | History: {history_str}")
         except Exception as e:
-            raise AIBadRequestException(f"Gemini API Error: {str(e)}")
+            history_str = str(gemini_history) if 'gemini_history' in locals() else 'None'
+            raise AIBadRequestException(f"Gemini API Error: {str(e)} | History: {history_str}")
 
     async def check_health(self) -> bool:
         if not settings.GEMINI_ENABLED:

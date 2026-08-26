@@ -13,13 +13,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database.models.ml import TopicMastery, MasteryObservation, ItemDifficulty, ReviewSchedule
-from app.database.models.quiz import QuizAttempt, Question
+from app.database.models.quiz import QuizAttempt, Question, Quiz
 from app.database.models.memory import UserMemory
 
 
 class MLRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def commit(self) -> None:
+        """Commit current transaction changes to persistent storage."""
+        await self.session.commit()
 
     # ------------------------------------------------------------------ Topic mastery
     async def get_topic_mastery_map(self, user_id: UUID, topics: list[str]) -> dict[str, TopicMastery]:

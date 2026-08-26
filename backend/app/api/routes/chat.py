@@ -96,10 +96,11 @@ async def get_conversation_context(
 
     # Surface topics due for spaced repetition (adaptive ML) as sidebar chips
     try:
-        from app.repositories.ml_repository import MLRepository
-        from app.services.ml import ReviewScheduler
-        due = await ReviewScheduler(MLRepository(db)).get_due_reviews(current_user.id)
-        topics.extend([f"due: {d['topic']}" for d in due[:5]])
+        async with db.begin_nested():
+            from app.repositories.ml_repository import MLRepository
+            from app.services.ml import ReviewScheduler
+            due = await ReviewScheduler(MLRepository(db)).get_due_reviews(current_user.id)
+            topics.extend([f"due: {d['topic']}" for d in due[:5]])
     except Exception:
         pass  # ML disabled / tables missing -> no due chips
     
@@ -129,10 +130,13 @@ async def delete_conversation(
     if not conv:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Conversation not found")
 
-    # Clear conversation-scoped memories first (FK is ON DELETE SET NULL)
+    # Clear conversation-scoped memories first
     await db.execute(delete(UserMemory).where(UserMemory.conversation_id == conversation_id))
 
-    # Messages cascade via the Conversation relationship
+    # Manually delete messages since ON DELETE CASCADE isn't set at the DB level for this foreign key
+    await db.execute(delete(Message).where(Message.conversation_id == conversation_id))
+
+    # Now we can safely delete the conversation itself
     await db.delete(conv)
     await db.commit()
 

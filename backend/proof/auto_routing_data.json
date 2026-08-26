@@ -1,0 +1,41 @@
+[
+  {
+    "id": "80354a42-ecc3-4911-a410-9203362f2d16",
+    "title": "write code for a complex web server in python",
+    "messages": [
+      {
+        "prompt": "write code for a complex web server in python",
+        "response_preview": "%%%PAATHSHALA:code%%%\n{\"title\":\"Production-Ready Asynchronous Web Server in Python\",\"summary\":\"A ful...",
+        "provider": "gemini",
+        "model": "gemini-flash-latest",
+        "latency_ms": null
+      }
+    ]
+  },
+  {
+    "id": "ffd2a3e9-6395-474e-9e0f-6759a5270d48",
+    "title": "Compare PostgreSQL vs MongoDB",
+    "messages": [
+      {
+        "prompt": "Compare PostgreSQL vs MongoDB",
+        "response_preview": "%%%PAATHSHALA:comparison%%%\n{\"title\":\"PostgreSQL vs MongoDB Comparison\",\"summary\":\"Comparing the str...",
+        "provider": "ollama",
+        "model": "llama3:latest",
+        "latency_ms": null
+      }
+    ]
+  },
+  {
+    "id": "0c2727e3-a279-4976-94bf-50b3f45012ae",
+    "title": "What is RAG? Explain it simply",
+    "messages": [
+      {
+        "prompt": "What is RAG? Explain it simply",
+        "response_preview": "%%%PAATHSHALA:concept%%%\n{\"title\":\"RAG Pipeline\",\"summary\":\"Retrieval-augmented generation for accur...",
+        "provider": "ollama",
+        "model": "llama3:latest",
+        "latency_ms": null
+      }
+    ]
+  }
+]

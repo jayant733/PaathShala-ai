@@ -53,7 +53,8 @@ class DashboardService:
         mastery_rows = []
         if self.ml_engine is not None:
             try:
-                mastery_rows = await self.ml_engine.repo.list_topic_mastery(user_id)
+                async with self.repository.db.begin_nested():
+                    mastery_rows = await self.ml_engine.repo.list_topic_mastery(user_id)
             except Exception:
                 mastery_rows = []
         if mastery_rows:

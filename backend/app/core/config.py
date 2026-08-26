@@ -1,4 +1,13 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from dotenv import dotenv_values
+import os
+
+# Force load from .env and override os.environ BEFORE Settings is instantiated
+env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
+env_dict = dotenv_values(env_path)
+for k, v in env_dict.items():
+    if v is not None:
+        os.environ[k] = v
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
@@ -12,6 +21,12 @@ class Settings(BaseSettings):
     
     GEMINI_MODEL: str = "gemini-flash-latest"
     
+    # --------------------------------------------------------- Usage Limits
+    # Maximum conversations a user can create (protects Gemini API quota).
+    MAX_CONVERSATIONS_PER_USER: int = 2
+    # Maximum quizzes a user can generate.
+    MAX_QUIZZES_PER_USER: int = 2
+    
     DEFAULT_AI_PROVIDER: str = "gemini"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     GEMINI_ENABLED: bool = True
@@ -19,8 +34,7 @@ class Settings(BaseSettings):
 
     # ------------------------------------------------------------------ ML
     # Adaptive learning engine (knowledge tracing / IRT / spaced repetition).
-    # Default OFF so existing behavior and tests are untouched until enabled.
-    ML_ENABLED: bool = False
+    ML_ENABLED: bool = True
     # Optional deep-learning frameworks (torch/tf/jax) — used when available.
     ML_DL_ENABLED: bool = True
     # Which trainer backend to use: sklearn | xgboost | lightgbm | torch | tensorflow | jax

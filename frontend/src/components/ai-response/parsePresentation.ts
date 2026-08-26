@@ -50,7 +50,24 @@ export function parsePresentation(
   const isDone = opts?.isDone !== false;
 
   const open = text.match(OPEN_RE);
-  if (!open) return { status: 'none' };
+  if (!open) {
+    if (!isDone) return { status: 'none' };
+    
+    // Synthetic layer for raw markdown responses (like Gemma) to match Gemini presentation
+    const titleMatch = text.match(/^\s*#\s+(.+)$/m) || text.match(/^\s*\*\*(.+?)\*\*\s*$/m);
+    const syntheticTitle = titleMatch ? titleMatch[1].trim() : 'Learning Concept';
+    
+    return {
+      status: 'parsed',
+      type: 'default',
+      presentation: {
+        title: syntheticTitle,
+        answerType: 'default',
+        difficulty: 'intermediate',
+        markdown: text,
+      }
+    };
+  }
 
   const rawType = open[1];
   const type: AnswerType = VALID_TYPES.includes(rawType as AnswerType)

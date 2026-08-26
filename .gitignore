@@ -20,3 +20,4 @@ automation/audit_logs/
 automation/health/
 backend/app/automation/
 backend/docs/incidents/
+.agents/

@@ -21,13 +21,13 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
       try {
         await fetchHealth();
         const prefsData = await userApi.getAiPreferences();
-        
+
         // Only set default if mode is empty or invalid
         if (prefsData) {
-            setPrefs(prefsData);
-            useAIStore.getState().setMode(prefsData.mode as any || 'auto');
-            useAIStore.getState().setProviderAndModel(prefsData.provider || 'gemini', prefsData.model || 'gemini-2.5-flash');
-            onModelChange(prefsData.provider, prefsData.model, prefsData.mode as any);
+          setPrefs(prefsData);
+          useAIStore.getState().setMode(prefsData.mode as any || 'auto');
+          useAIStore.getState().setProviderAndModel(prefsData.provider || 'gemini', prefsData.model || 'gemini-2.5-flash');
+          onModelChange(prefsData.provider, prefsData.model, prefsData.mode as any);
         }
       } catch (err) {
         console.error("Failed to load AI preferences", err);
@@ -35,7 +35,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, []); // Remove onModelChange from dependency array to break infinite loop
 
@@ -43,16 +43,16 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
     // If auto, defaults
     const actualProvider = provider || 'gemini';
     const actualModel = model || 'llama3:latest'; // Default fallback
-    
+
     const newPrefs = { mode, provider: actualProvider, model: actualModel };
     setPrefs(newPrefs as UserAIPreference);
-    
+
     useAIStore.getState().setMode(mode as any);
     useAIStore.getState().setProviderAndModel(actualProvider, actualModel);
-    
+
     onModelChange(actualProvider, actualModel, mode);
     setIsOpen(false);
-    
+
     try {
       await userApi.updateAiPreferences(newPrefs);
     } catch (e) {
@@ -93,7 +93,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
 
       {isOpen && (
         <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl bg-[#1e293b] border border-white/10 shadow-xl overflow-hidden z-50">
-          
+
           {/* Auto Mode */}
           <div className="p-2 border-b border-white/5">
             <button
@@ -128,7 +128,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
               {!isAuto && currentProvider === 'gemini' && <Check className="w-4 h-4" />}
             </button>
           </div>
-          
+
           {/* Local AI */}
           <div className="p-2 border-t border-white/5">
             <div className="flex items-center justify-between text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-2">
@@ -141,7 +141,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
                 <span className="text-red-400 normal-case font-normal text-[10px]">Offline</span>
               )}
             </div>
-            
+
             {health?.ollama?.status === 'healthy' && health.ollama.models?.length ? (
               health.ollama.models.map(model => (
                 <button

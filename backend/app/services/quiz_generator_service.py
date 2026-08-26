@@ -114,7 +114,8 @@ class QuizGeneratorService:
         if not self.ml_engine:
             return None
         try:
-            rows = await self.ml_engine.repo.list_topic_mastery(user_id)
+            async with self.ml_engine.repo.session.begin_nested():
+                rows = await self.ml_engine.repo.list_topic_mastery(user_id)
             weak = [
                 m for m in rows
                 if (m.mastery or 0.5) < 0.5 or (m.confidence or 0.0) < 0.4
@@ -230,7 +231,7 @@ class QuizGeneratorService:
             "difficulty": draft.difficulty,
             "duration_minutes": draft.duration_minutes,
             "number_of_questions": len(draft.questions),
-            "status": "draft",
+            "status": "published",
             "source_type": source_type,
             "source_id": source_id,
             "generation_prompt": generation_prompt,

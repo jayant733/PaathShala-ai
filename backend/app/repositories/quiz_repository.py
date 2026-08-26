@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy import desc
+from sqlalchemy import desc, func, and_
 
 from app.database.models.quiz import Quiz, Question, QuizAttempt
 from app.database.models.chat import Conversation, Message
@@ -42,6 +42,48 @@ class QuizRepository:
         stmt = stmt.order_by(desc(Quiz.created_at))
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_quizzes_with_last_attempt(
+        self,
+        user_id: UUID,
+        status: Optional[str] = None,
+        subject: Optional[str] = None,
+        difficulty: Optional[str] = None,
+        search: Optional[str] = None,
+    ) -> list[tuple[Quiz, Optional[QuizAttempt]]]:
+        quizzes = await self.list_quizzes(
+            user_id=user_id, status=status, subject=subject, difficulty=difficulty, search=search
+        )
+        if not quizzes:
+            return []
+
+        quiz_ids = [q.id for q in quizzes]
+        subq = (
+            select(
+                QuizAttempt.quiz_id,
+                func.max(QuizAttempt.created_at).label("max_created_at")
+            )
+            .where(QuizAttempt.user_id == user_id, QuizAttempt.quiz_id.in_(quiz_ids))
+            .group_by(QuizAttempt.quiz_id)
+            .subquery()
+        )
+
+        stmt = (
+            select(QuizAttempt)
+            .join(
+                subq,
+                and_(
+                    QuizAttempt.quiz_id == subq.c.quiz_id,
+                    QuizAttempt.created_at == subq.c.max_created_at
+                )
+            )
+            .where(QuizAttempt.user_id == user_id)
+        )
+        result = await self.session.execute(stmt)
+        attempts = list(result.scalars().all())
+        attempt_map = {att.quiz_id: att for att in attempts}
+
+        return [(q, attempt_map.get(q.id)) for q in quizzes]
 
     async def create_quiz(self, user_id: UUID, data: dict, questions: list[dict]) -> Quiz:
         quiz = Quiz(created_by=user_id, **data)

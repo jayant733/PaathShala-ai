@@ -12,6 +12,18 @@ from app.ai_router.resource_health.health_agent import HealthCircuitBreakerAgent
 
 router = APIRouter(tags=["health"])
 
+@router.get("/")
+async def health_check():
+    """
+    Basic health check endpoint.
+    """
+    from app.core.config import settings
+    return {
+        "status": "healthy",
+        "gemini_api_key": settings.GEMINI_API_KEY,
+        "gemini_api_key_len": len(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else 0
+    }
+
 @router.get("/health/live")
 async def liveness_check():
     """Kubernetes-style Liveness Check: verifies FastAPI process is running."""

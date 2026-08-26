@@ -41,7 +41,7 @@ export function HistoryItem({ conversation, isPinned, onPin, onUnpin, onClick }:
     <div 
       onClick={() => onClick(conversation.id)}
       onMouseLeave={handleMouseLeave}
-      className="bg-surface rounded-lg p-stack-md hover:-translate-y-1 transition-transform cursor-pointer group shadow-sm border border-outline-variant/10 relative"
+      className="bg-surface-container-lowest/80 rounded-xl p-stack-md cursor-pointer group relative app-surface app-surface-hover"
     >
       <div className="flex justify-between items-start mb-2">
         <span className="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1">

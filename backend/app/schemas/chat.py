@@ -20,6 +20,7 @@ class ChatMessage(BaseModel):
     role: str
     content: str
     created_at: datetime
+    model_used: Optional[str] = None
     
     class Config:
         from_attributes = True
