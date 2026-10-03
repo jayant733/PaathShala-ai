@@ -366,10 +366,18 @@ export default function AIChat() {
       ai_mode: currentMode,
       provider: currentMode === 'auto' ? undefined : currentProvider,
       model_name: currentMode === 'auto' ? undefined : currentModel
-    }, (chunk, isDone, error, modelName) => {
+    }, (chunk, isDone, error, modelName, conversationId) => {
+      if (conversationId) {
+        activeId = conversationId;
+      }
+
       if (error) {
         setStreamingMessage(null);
         setStreamingModel(null);
+        if (!selectedConversationId && activeId) {
+          setSelectedConversationId(activeId);
+          fetchConversations();
+        }
         setMessages(prev => [...prev, { 
           id: (Date.now() + 1).toString(), 
           role: 'assistant', 
@@ -413,8 +421,9 @@ export default function AIChat() {
         // Broadcast event for Dashboard refresh
         window.dispatchEvent(new Event('conversationFinished'));
         
-        if (!selectedConversationId) {
-          fetchConversations(undefined, msgToSend.slice(0, 30));
+        if (!selectedConversationId && activeId) {
+          setSelectedConversationId(activeId);
+          fetchConversations();
         }
         
         if (activeId) {

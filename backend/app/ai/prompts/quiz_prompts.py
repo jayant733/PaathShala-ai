@@ -5,6 +5,7 @@ The system prompt enforces a strict JSON contract (see ``QuizDraft`` in
 """
 
 from typing import Optional
+from app.services.study_guardrail_service import STUDY_ONLY_SYSTEM_RULES
 
 QUIZ_GENERATION_SYSTEM_PROMPT = """You are an expert quiz author for PaathShala AI. You create high-quality,
 pedagogically sound quizzes that help learners master a topic.
@@ -41,7 +42,7 @@ Return JSON in EXACTLY this shape:
     }
   ]
 }
-"""
+""" + STUDY_ONLY_SYSTEM_RULES
 
 TEMPLATE_GUIDES: dict[str, str] = {
     "beginner": (

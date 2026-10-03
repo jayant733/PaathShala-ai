@@ -55,7 +55,17 @@ export default function QuizCreate() {
     } catch (e: any) {
       setStep(-1);
       const apiError = e.response?.data?.detail;
-      setError(apiError || e.message || 'Generation failed');
+      const message =
+        typeof apiError === 'string'
+          ? apiError
+          : Array.isArray(apiError)
+            ? apiError.map((item) => item?.msg || String(item)).join(', ')
+            : Array.isArray(apiError?.errors)
+              ? apiError.errors.join(', ')
+              : apiError
+                ? JSON.stringify(apiError)
+                : e.message || 'Generation failed';
+      setError(message);
     }
   };
 

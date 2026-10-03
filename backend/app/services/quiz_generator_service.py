@@ -22,6 +22,7 @@ from app.schemas.quiz import (
     QuestionResult,
     WeakTopic,
 )
+from app.services.study_guardrail_service import enforce_study_scope
 
 _FENCE_RE = re.compile(r"^```(?:json)?\s*", re.IGNORECASE)
 _FENCE_END_RE = re.compile(r"\s*```$")
@@ -133,8 +134,9 @@ class QuizGeneratorService:
             return None
 
     async def generate_from_prompt(self, user_id: UUID, req: QuizGenerateRequest):
+        enforce_study_scope(req.prompt)
         if req.provider:
-            set_ai_context(provider=req.provider, model_name=req.model_name)
+            set_ai_context(provider=req.provider, model_name=req.model_name, mode="manual")
         mastery_context = await self._build_mastery_context(user_id)
         prompt = build_quiz_generation_prompt(
             req.prompt, req.template, req.question_count, req.difficulty, req.subject,
@@ -148,6 +150,7 @@ class QuizGeneratorService:
 
     async def generate_from_history(self, user_id: UUID, req: QuizGenerateFromHistoryRequest):
         source_text, _title = await self._load_source(user_id, req.source_type, req.source_id)
+        enforce_study_scope(source_text)
         prompt = build_quiz_from_source_prompt(source_text, req.template, req.question_count, req.difficulty)
         draft = await self._generate(user_id, prompt)
         return await self._validate_repair_persist(

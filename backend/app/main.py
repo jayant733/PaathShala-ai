@@ -19,11 +19,7 @@ app = FastAPI(
     description="Agentic AI Learning Platform Backend"
 )
 
-# Prometheus metrics
-Instrumentator().instrument(app).expose(
-    app,
-    endpoint="/metrics"
-)
+instrumentator = Instrumentator()
 
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +64,15 @@ app.include_router(ai_providers_router, prefix="/api/v1/ai")
 app.include_router(routing_rules_router, prefix="/api/v1")
 app.include_router(quizzes_router, prefix="/api/v1")
 app.include_router(ml_router, prefix="/api/v1")
+
+# FastAPI 0.138+ may retain included routers as lazy route containers.
+# prometheus-fastapi-instrumentator 7.1 expects every route to expose
+# ``.path`` and otherwise crashes all requests while resolving labels.
+# Keep the metrics endpoint available, but skip request instrumentation when
+# the installed versions are incompatible.
+if all(hasattr(route, "path") for route in app.routes):
+    instrumentator.instrument(app)
+instrumentator.expose(app, endpoint="/metrics")
 
 @app.on_event("startup")
 async def startup_event():

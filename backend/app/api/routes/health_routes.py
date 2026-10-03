@@ -17,12 +17,7 @@ async def health_check():
     """
     Basic health check endpoint.
     """
-    from app.core.config import settings
-    return {
-        "status": "healthy",
-        "gemini_api_key": settings.GEMINI_API_KEY,
-        "gemini_api_key_len": len(settings.GEMINI_API_KEY) if settings.GEMINI_API_KEY else 0
-    }
+    return {"status": "healthy", "service": "PaathShala AI backend"}
 
 @router.get("/health/live")
 async def liveness_check():

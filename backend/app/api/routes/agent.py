@@ -8,6 +8,11 @@ from app.services.agent_service import AgentService
 from app.schemas.agent import AgentChatRequest, AgentChatResponse
 from app.ai.providers.context import set_ai_context
 from app.services import routing_service
+from app.services.study_guardrail_service import (
+    STUDY_ONLY_REFUSAL,
+    enforce_study_scope,
+    is_study_related,
+)
 
 router = APIRouter(prefix="/agent", tags=["agent"])
 
@@ -38,6 +43,8 @@ async def chat_with_agent(
     try:
         import logging
         logger = logging.getLogger(__name__)
+
+        enforce_study_scope(request.message)
 
         # Block new conversation creation if user has hit the limit
         if not request.conversation_id:
@@ -84,6 +91,12 @@ async def stream_chat_with_agent(
     import json
     import logging
     logger = logging.getLogger(__name__)
+
+    if not is_study_related(request.message):
+        async def refusal_generator():
+            yield f"data: {json.dumps({'chunk': STUDY_ONLY_REFUSAL, 'model_name': 'study-policy', 'done': True})}\n\n"
+
+        return StreamingResponse(refusal_generator(), media_type="text/event-stream")
     
     logger.info(f"[Agent Route] Received stream request: mode={request.ai_mode}, provider={request.provider}, model={request.model_name}")
 

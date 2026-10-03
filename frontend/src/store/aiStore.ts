@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { aiApi } from '../api/ai.api';
 import type { HealthStatus } from '../api/ai.api';
 
-type AIMode = 'auto' | 'gemini' | 'ollama';
+type AIMode = 'auto' | 'manual';
 
 interface AIState {
   mode: AIMode;
@@ -20,7 +20,7 @@ export const useAIStore = create<AIState>()(
     (set, get) => ({
       mode: 'auto',
       provider: 'gemini',
-      model: 'gemini-2.5-flash',
+      model: 'gemini-flash-latest',
       health: null,
       setMode: (mode) => set({ mode }),
       setProviderAndModel: (provider, model) => set({ provider, model }),
@@ -39,6 +39,15 @@ export const useAIStore = create<AIState>()(
     {
       name: 'ai-preferences',
       partialize: (state) => ({ mode: state.mode, provider: state.provider, model: state.model }), // Do NOT persist health
+      merge: (persisted, current) => {
+        const saved = persisted as Partial<AIState>;
+        return {
+          ...current,
+          ...saved,
+          // Normalize values persisted by older builds ("gemini"/"ollama").
+          mode: saved.mode === 'auto' ? 'auto' : 'manual',
+        };
+      },
     }
   )
 );

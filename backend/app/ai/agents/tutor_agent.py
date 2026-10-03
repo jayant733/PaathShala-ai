@@ -1,11 +1,12 @@
 from app.ai.agents.state import AgentState
 from app.services.ai_service import AIService
 from app.ai.agents.tools import AgentTools
+from app.services.study_guardrail_service import STUDY_ONLY_SYSTEM_RULES
 
 TUTOR_PROMPT = """You are an AI Tutor.
 Your job is to explain concepts clearly, patiently, and adaptively.
 If you have retrieved documents in the context, use them to ground your answer.
-"""
+""" + STUDY_ONLY_SYSTEM_RULES
 
 def create_tutor_node(ai_service: AIService, tools: AgentTools):
     async def tutor_node(state: AgentState) -> dict:

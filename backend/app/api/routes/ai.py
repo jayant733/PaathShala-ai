@@ -4,6 +4,7 @@ from app.database.models.user import User
 from app.api.dependencies import get_current_user, get_ai_service
 from app.services.ai_service import AIService
 from app.ai.prompts.tutor_prompts import TUTOR_SYSTEM_PROMPT
+from app.services.study_guardrail_service import STUDY_ONLY_REFUSAL, is_study_related
 import time
 
 router = APIRouter(prefix="/ai", tags=["ai"])
@@ -17,6 +18,13 @@ async def chat_with_ai(
     """
     Chat with the AI tutor.
     """
+    if not is_study_related(request.message):
+        return {
+            "response": STUDY_ONLY_REFUSAL,
+            "model": "study-policy",
+            "tokens": {"input": 0, "output": 0},
+        }
+
     result = await ai_service.chat_with_tutor(
         user_id=current_user.id,
         message=request.message,

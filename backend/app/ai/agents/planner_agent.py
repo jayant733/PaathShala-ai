@@ -1,10 +1,11 @@
 from app.ai.agents.state import AgentState
 from app.services.ai_service import AIService
+from app.services.study_guardrail_service import STUDY_ONLY_SYSTEM_RULES
 
 PLANNER_PROMPT = """You are a Learning Planner Agent.
 Your job is to generate a structured learning roadmap based on the user's goals.
 Break the learning path down into logical steps (e.g., Week 1, Week 2).
-"""
+""" + STUDY_ONLY_SYSTEM_RULES
 
 def create_planner_node(ai_service: AIService):
     async def planner_node(state: AgentState) -> dict:

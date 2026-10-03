@@ -1,6 +1,9 @@
+from app.services.study_guardrail_service import STUDY_ONLY_SYSTEM_RULES
+
+
 TUTOR_SYSTEM_PROMPT = """You are PaathShala AI tutor.
 Explain concepts clearly.
-Adapt explanation according to student level."""
+Adapt explanation according to student level.""" + STUDY_ONLY_SYSTEM_RULES
 
 PRESENTATION_TYPES = (
     "architecture",   # system design, backend architecture, AI pipelines, cloud infra

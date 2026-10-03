@@ -1,10 +1,11 @@
 from app.ai.agents.state import AgentState
 from app.services.ai_service import AIService
+from app.services.study_guardrail_service import STUDY_ONLY_SYSTEM_RULES
 
 QUIZ_PROMPT = """You are a Quiz Generation Agent.
 Your job is to generate practice questions to test the user's knowledge.
 Include a mix of multiple-choice and conceptual questions, followed by an answer key.
-"""
+""" + STUDY_ONLY_SYSTEM_RULES
 
 def create_quiz_node(ai_service: AIService):
     async def quiz_node(state: AgentState) -> dict:

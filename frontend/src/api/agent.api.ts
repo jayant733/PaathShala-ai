@@ -21,7 +21,7 @@ export const agentApi = {
   },
   chatStream: async (
     data: AgentChatRequest, 
-    onChunk: (chunk: string, isDone: boolean, error?: string, modelName?: string) => void,
+    onChunk: (chunk: string, isDone: boolean, error?: string, modelName?: string, conversationId?: string) => void,
     signal?: AbortSignal
   ) => {
     const token = localStorage.getItem('token');
@@ -48,14 +48,18 @@ export const agentApi = {
       const decoder = new TextDecoder();
       
       if (!reader) return;
-      
+
+      // A network chunk can end in the middle of an SSE line. Keep the
+      // incomplete tail for the next read so JSON events are never dropped.
+      let buffer = '';
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        
-        const chunkStr = decoder.decode(value, { stream: true });
-        const lines = chunkStr.split('\n');
-        
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split(/\r?\n/);
+        buffer = lines.pop() ?? '';
+
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const dataStr = line.slice(6);
@@ -67,11 +71,22 @@ export const agentApi = {
                 onChunk('', true, data.error);
                 return;
               }
-              onChunk(data.chunk, data.done, undefined, data.model_name);
+              onChunk(data.chunk ?? '', Boolean(data.done), undefined, data.model_name, data.conversation_id);
             } catch (e) {
               console.error('Error parsing SSE data', e);
             }
           }
+        }
+      }
+
+      buffer += decoder.decode();
+      if (buffer.startsWith('data: ')) {
+        try {
+          const data = JSON.parse(buffer.slice(6));
+          if (data.error) onChunk('', true, data.error);
+          else onChunk(data.chunk ?? '', Boolean(data.done), undefined, data.model_name, data.conversation_id);
+        } catch (e) {
+          console.error('Error parsing final SSE data', e);
         }
       }
     } catch (err: any) {

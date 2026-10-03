@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from app.services.ai_service import AIService
 from app.ai.agents.recommendation_agent import RecommendationAgent
-from app.ai.llm.gemini import GeminiProvider
+from app.ai.providers.gemini_provider import GeminiProvider
 
 load_dotenv()
 
@@ -20,4 +20,5 @@ async def main():
     for r in result.recommendations:
         print(r.title, "-", r.reason)
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

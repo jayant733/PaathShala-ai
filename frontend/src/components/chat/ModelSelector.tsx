@@ -25,8 +25,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
         // Only set default if mode is empty or invalid
         if (prefsData) {
           setPrefs(prefsData);
-          useAIStore.getState().setMode(prefsData.mode as any || 'auto');
-          useAIStore.getState().setProviderAndModel(prefsData.provider || 'gemini', prefsData.model || 'gemini-2.5-flash');
+          useAIStore.getState().setMode(prefsData.mode === 'manual' ? 'manual' : 'auto');
+          useAIStore.getState().setProviderAndModel(prefsData.provider || 'gemini', prefsData.model || 'gemini-flash-latest');
           onModelChange(prefsData.provider, prefsData.model, prefsData.mode as any);
         }
       } catch (err) {
@@ -42,12 +42,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onModelChange, disabled }
   const handleSelect = async (mode: 'auto' | 'manual', provider: string | null = null, model: string | null = null) => {
     // If auto, defaults
     const actualProvider = provider || 'gemini';
-    const actualModel = model || 'llama3:latest'; // Default fallback
+    const actualModel = model || (actualProvider === 'gemini' ? 'gemini-flash-latest' : 'llama3:latest');
 
     const newPrefs = { mode, provider: actualProvider, model: actualModel };
     setPrefs(newPrefs as UserAIPreference);
 
-    useAIStore.getState().setMode(mode as any);
+    useAIStore.getState().setMode(mode);
     useAIStore.getState().setProviderAndModel(actualProvider, actualModel);
 
     onModelChange(actualProvider, actualModel, mode);

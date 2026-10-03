@@ -44,8 +44,12 @@ export default function AgentChat() {
       }
       
       setMessages(prev => [...prev, { role: 'assistant', content: res.response, agent: res.agent }]);
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: '**Error**: Could not connect to Agent Ecosystem.' }]);
+    } catch (error: any) {
+      const detail = error.response?.data?.detail;
+      const message = typeof detail === 'string'
+        ? detail
+        : 'Could not connect to Agent Ecosystem.';
+      setMessages(prev => [...prev, { role: 'assistant', content: message }]);
     } finally {
       setLoading(false);
     }

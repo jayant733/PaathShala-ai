@@ -15,6 +15,8 @@ from app.core.exceptions import (
 from app.ai.providers.base import LLMProvider
 
 class GeminiProvider(LLMProvider):
+    MAX_TRANSIENT_RETRIES = 3
+
     def __init__(self):
         if not settings.GEMINI_API_KEY:
             raise AIConfigurationException("GEMINI_API_KEY is not set.")
@@ -22,88 +24,90 @@ class GeminiProvider(LLMProvider):
         self.model_name = settings.GEMINI_MODEL
         
     async def generate_response(self, prompt: str, system_instruction: Optional[str] = None) -> Dict[str, Any]:
-        try:
-            ctx = get_ai_context()
-            model_to_use = ctx.model_name if ctx.model_name else self.model_name
-            
-            model = genai.GenerativeModel(
-                model_name=model_to_use,
-                system_instruction=system_instruction
-            )
-            
-            response = await model.generate_content_async(prompt)
-            
-            input_tokens = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
-            output_tokens = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
-            
-            return {
-                "response_text": response.text,
-                "model_name": self.model_name,
-                "token_usage": {
-                    "input": input_tokens,
-                    "output": output_tokens
+        ctx = get_ai_context()
+        model_to_use = ctx.model_name if ctx.model_name else self.model_name
+        for attempt in range(self.MAX_TRANSIENT_RETRIES):
+            try:
+                model = genai.GenerativeModel(
+                    model_name=model_to_use,
+                    system_instruction=system_instruction
+                )
+
+                response = await model.generate_content_async(prompt)
+
+                input_tokens = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
+                output_tokens = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
+
+                return {
+                    "response_text": response.text,
+                    "model_name": model_to_use,
+                    "token_usage": {
+                        "input": input_tokens,
+                        "output": output_tokens
+                    }
                 }
-            }
-            
-        except google_exceptions.DeadlineExceeded:
-            raise AITimeoutException()
-        except google_exceptions.ResourceExhausted:
-            raise AIRateLimitException()
-        except google_exceptions.InvalidArgument as e:
-            raise AIBadRequestException(str(e))
-        except Exception as e:
-            raise AIBadRequestException(f"Gemini API Error: {str(e)}")
+            except google_exceptions.ServiceUnavailable as e:
+                if attempt == self.MAX_TRANSIENT_RETRIES - 1:
+                    raise AIBadRequestException(f"Gemini is temporarily unavailable: {e}")
+                await asyncio.sleep(2 ** attempt)
+            except google_exceptions.DeadlineExceeded:
+                raise AITimeoutException()
+            except google_exceptions.ResourceExhausted:
+                raise AIRateLimitException()
+            except google_exceptions.InvalidArgument as e:
+                raise AIBadRequestException(str(e))
+            except Exception as e:
+                raise AIBadRequestException(f"Gemini API Error: {str(e)}")
 
     async def stream_response(self, prompt: str, system_instruction: Optional[str] = None, history: list = None):
-        try:
-            ctx = get_ai_context()
-            model_to_use = ctx.model_name if ctx.model_name else self.model_name
-            
-            model = genai.GenerativeModel(
-                model_name=model_to_use,
-                system_instruction=system_instruction
-            )
-            
-            if history:
-                # Build Gemini-format history
-                gemini_history = [
-                    {"role": "model" if m["role"] == "assistant" else "user", "parts": [m["content"]]}
-                    for m in history
-                ]
-                import logging
-                logger = logging.getLogger(__name__)
-                logger.info(f"Gemini History: {gemini_history}")
-                logger.info(f"Gemini Prompt: {prompt}")
-                chat = model.start_chat(history=gemini_history)
-                response = await chat.send_message_async(prompt, stream=True)
-            else:
-                response = await model.generate_content_async(prompt, stream=True)
-            
-            async for chunk in response:
-                if chunk.text:
-                    yield {
-                        "chunk": chunk.text,
-                        "model_name": model_to_use,
-                        "done": False
-                    }
-                    
-            # Send a final chunk to signal completion
-            yield {
-                "chunk": "",
-                "model_name": model_to_use,
-                "done": True
-            }
-            
-        except google_exceptions.DeadlineExceeded:
-            raise AITimeoutException()
-        except google_exceptions.ResourceExhausted:
-            raise AIRateLimitException()
-        except google_exceptions.InvalidArgument as e:
-            history_str = str(gemini_history) if 'gemini_history' in locals() else 'None'
-            raise AIBadRequestException(f"InvalidArgument: {str(e)} | History: {history_str}")
-        except Exception as e:
-            history_str = str(gemini_history) if 'gemini_history' in locals() else 'None'
-            raise AIBadRequestException(f"Gemini API Error: {str(e)} | History: {history_str}")
+        ctx = get_ai_context()
+        model_to_use = ctx.model_name if ctx.model_name else self.model_name
+        gemini_history = None
+        for attempt in range(self.MAX_TRANSIENT_RETRIES):
+            yielded_content = False
+            try:
+                model = genai.GenerativeModel(
+                    model_name=model_to_use,
+                    system_instruction=system_instruction
+                )
+
+                if history:
+                    gemini_history = [
+                        {"role": "model" if m["role"] == "assistant" else "user", "parts": [m["content"]]}
+                        for m in history
+                    ]
+                    chat = model.start_chat(history=gemini_history)
+                    response = await chat.send_message_async(prompt, stream=True)
+                else:
+                    response = await model.generate_content_async(prompt, stream=True)
+
+                async for chunk in response:
+                    if chunk.text:
+                        yielded_content = True
+                        yield {
+                            "chunk": chunk.text,
+                            "model_name": model_to_use,
+                            "done": False
+                        }
+
+                yield {
+                    "chunk": "",
+                    "model_name": model_to_use,
+                    "done": True
+                }
+                return
+            except google_exceptions.ServiceUnavailable as e:
+                if yielded_content or attempt == self.MAX_TRANSIENT_RETRIES - 1:
+                    raise AIBadRequestException(f"Gemini is temporarily unavailable: {e}")
+                await asyncio.sleep(2 ** attempt)
+            except google_exceptions.DeadlineExceeded:
+                raise AITimeoutException()
+            except google_exceptions.ResourceExhausted:
+                raise AIRateLimitException()
+            except google_exceptions.InvalidArgument as e:
+                raise AIBadRequestException(f"InvalidArgument: {e} | History: {gemini_history}")
+            except Exception as e:
+                raise AIBadRequestException(f"Gemini API Error: {e} | History: {gemini_history}")
 
     async def check_health(self) -> bool:
         if not settings.GEMINI_ENABLED:
