@@ -1,7 +1,7 @@
-# PaathShal AI Backend
+# PaathShala AI Backend
 
 ## Project Overview
-PaathShal AI is a production-grade Agentic AI Learning Platform. This backend provides the foundation for uploading resources, generating lessons, tracking progress, and communicating with multi-agent workflows.
+PaathShala AI is a production-grade Agentic AI Learning Platform. This backend provides the foundation for uploading resources, generating lessons, tracking progress, and communicating with multi-agent workflows.
 
 ## Architecture
 The backend is built with:

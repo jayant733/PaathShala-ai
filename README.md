@@ -2,6 +2,7 @@
 
 <div align="center">
 
+[![Watch Demo Video](https://img.shields.io/badge/▶%20Watch%20Demo-Google%20Drive-E50914?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1R6tUWULMCS0dqxqIFA40bvdXiShW8yXD/view?usp=sharing)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev)
@@ -16,9 +17,33 @@
 
 *Empowering learners through continuous knowledge tracing, cognitive retention modeling, and dynamic edge/cloud LLM routing.*
 
-[Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Model Router](#-intelligent-localcloud-model-router) • [Adaptive Learning Core](#-adaptive-learning-core) • [Quickstart](#-quickstart--installation) • [API Reference](#-api-endpoints) • [Master Guide (everything.md)](everything.md)
+[📹 Video Demo](#-video-walkthrough--demo) • [Key Features](#-key-features) • [System Architecture](#-system-architecture) • [Model Router](#-intelligent-localcloud-model-router) • [Adaptive Learning Core](#-adaptive-learning-core) • [Quickstart](#-quickstart--installation) • [API Reference](#-api-endpoints) • [Master Guide (everything.md)](everything.md)
 
 </div>
+
+---
+
+## 📹 Video Walkthrough & Demo
+
+<div align="center">
+
+[![Watch PaathShala AI Walkthrough](https://img.shields.io/badge/▶%20Watch%20Full%20Demo%20Video-Google%20Drive%20(Full%20HD)-red?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1R6tUWULMCS0dqxqIFA40bvdXiShW8yXD/view?usp=sharing)
+[![Direct Video Stream](https://img.shields.io/badge/Direct%20Video%20Stream-Google%20Drive-4285F4?style=for-the-badge&logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1R6tUWULMCS0dqxqIFA40bvdXiShW8yXD/view?usp=sharing)
+
+</div>
+
+> [!TIP]
+> **🎬 Video Presentation & Architecture Demonstration:**  
+> Watch the complete hands-on video demonstration of PaathShala AI in action:  
+> **🔗 Video URL:** [https://drive.google.com/file/d/1R6tUWULMCS0dqxqIFA40bvdXiShW8yXD/view?usp=sharing](https://drive.google.com/file/d/1R6tUWULMCS0dqxqIFA40bvdXiShW8yXD/view?usp=sharing)
+
+### 📌 What the Demo Demonstrates:
+- **🤖 LangGraph Multi-Agent Orchestration:** Real-time routing from Supervisor to specialized Tutor, Planner, and Quiz agents without monolithic prompt degradation.
+- **⚡ Autonomous Local/Cloud AI Gateway:** Dynamic live query offloading to local Ollama (`qwen2.5-coder:7b`, `llama3`) saving 66.7% API costs with Explainable AI (XAI) scoring breakdown.
+- **🧠 Continuous Knowledge Tracing:** Live Elo ($K=32/150$) and Item Response Theory (IRT Rasch 1-PL) difficulty calculation reacting to student assessment answers.
+- **📉 Spaced Repetition (SM-2):** Ebbinghaus decay curve calculation automatically popping review cards for weak topics.
+- **📚 RAG & Vector Memory:** Document upload, chunking, 768-dim embeddings (`text-embedding-004`), and `pgvector` similarity search.
+- **📈 Observability & Metrics:** Live telemetry in Prometheus, Grafana, Loki logs, and Alertmanager.
 
 ---
 
@@ -225,12 +250,23 @@ Make sure you have [Docker](https://docs.docker.com/get-docker/) and [Docker Com
    ```
 
 2. **Configure Environment Variables:**
+   Copy the example environment files for Docker Compose and the Backend service:
    ```bash
+   # Root Docker Compose environment
+   cp .env.example .env
+
+   # Backend service environment
    cp backend/.env.example backend/.env
    ```
-   Add your Google Gemini API key to `backend/.env`:
+   Add your Google Gemini API key to `.env` and `backend/.env`:
    ```env
    GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+   *(Optional: If running local LLM routing via Ollama on your host machine, install [Ollama](https://ollama.ai) and pull models:)*
+   ```bash
+   ollama pull qwen2.5-coder:7b
+   ollama pull llama3
    ```
 
 3. **Launch the entire stack:**

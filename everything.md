@@ -5,6 +5,7 @@
 > **Author & Lead Engineer:** Full-Stack AI & MLOps Engineer  
 > **Domain:** EdTech AI / Adaptive Learning Systems / Intelligent Local-Cloud Model Routing / Agentic LLM Architectures  
 > **Target Roles:** Machine Learning Engineer, AI Systems Architect, MLOps Engineer, Full-Stack AI Engineer  
+> **🎬 Video Walkthrough & Demo:** [Google Drive Demo Stream](https://drive.google.com/file/d/1R6tUWULMCS0dqxqIFA40bvdXiShW8yXD/view?usp=sharing)  
 
 ---
 
